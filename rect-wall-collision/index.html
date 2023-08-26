@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rect Collision / Wall</title>
+        <style type="text/css">
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            html,
+            body {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                align-items: center;
+                flex-direction: column;
+            }
+
+            canvas {
+                background-color: #144;
+                width: 350px;
+                height: 300px;
+                border: 2px solid #144;
+                border-radius: 5px;
+            }
+
+            textarea {
+                width: 350px;
+                background-color: #d9d9d9;
+                color: #444;
+                padding: 0.5em;
+                font-family: monospace;
+                font-weight: bold;
+                font-size: 17px;
+                outline: none;
+                border-radius: 5px;
+                height: auto;
+                min-height: 200px;
+                resize: none;
+                outline: none;
+                overflow: auto;
+                border: none;
+            }
+
+            textarea:hover {
+                resize: none;
+                outline: none;
+            }
+
+            .red {
+                background-color: rgba(250, 0, 0, 0.4);
+                color: #511;
+                width: 350px;
+                padding: 0.6em;
+                font-family: Verdana, Geneva, Tahoma, sans-serif;
+            }
+
+            .green {
+                background-color: rgba(0, 250, 0, 0.4);
+                color: #151;
+            }
+        </style>
+    </head>
+    <body>
+        <br />
+        <p>Rect Collision (wall)</p>
+        <canvas id="canvas" width="350" height="300"
+            >Canvas isn't supported on this browser, please update.</canvas
+        >
+        <br />
+
+        <script type="text/javascript">
+            var canvas = document.getElementById("canvas"),
+                ctx = canvas.getContext("2d"),
+                logger = new FillText("WALL COLLISION");
+
+            logger.x = canvas.width / 2 - 110;
+            logger.y = canvas.height / 2 - 30;
+
+            function FillText(_t) {
+                this.x = 10;
+                this.y = 20;
+                this.text = _t;
+                this.color = "#eff";
+                this.draw = function () {
+                    ctx.font = "27px normal monospace";
+                    ctx.fillStyle = this.color;
+                    ctx.fillText(this.text, this.x, this.y);
+                };
+            }
+
+            function Square(_d) {
+                this.x = 0;
+                this.y = 0;
+                this.color = "#199";
+                this.w = this.h = _d;
+                this.colliding = false;
+                this.vx = 2;
+                this.vy = 2;
+
+                this.draw = function () {
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y, this.w, this.h);
+                };
+            }
+
+            let arr = [];
+            function generate(_) {
+                arr = [];
+                for (let i = 0; i < _; i++) {
+                    const element = new Square(
+                        Math.floor(Math.random() * (40 - 20) + 20)
+                    );
+                    element.color = getRandomColor();
+                    element.vx = Math.random() * (2 - 1) + 1;
+                    element.vy = Math.random() * (2 - 1) + 1;
+                    arr.push(element);
+                }
+            }
+
+            generate(30);
+
+            function getRandomColor() {
+                const colors = [
+                    "#077",
+                    "#070",
+                    "#900",
+                    "#009",
+                    "#099",
+                    "#990",
+                    "#0a0",
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            animate();
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                logger.draw();
+
+                arr.forEach(sqr => {
+                    sqr.draw();
+                    sqr.x += sqr.vx;
+                    sqr.y += sqr.vy;
+
+                    if (sqr.x <= 0 || sqr.x + sqr.w >= canvas.width)
+                        sqr.vx = -sqr.vx;
+                    if (sqr.y <= 0 || sqr.y + sqr.h >= canvas.height)
+                        sqr.vy = -sqr.vy;
+                    if (sqr.y + sqr.h >= canvas.height)
+                        sqr.y = canvas.height - sqr.h;
+                    if (sqr.x + sqr.w >= canvas.width)
+                        sqr.x = canvas.width - sqr.w;
+                    if (sqr.x <= 0) sqr.x = 0;
+                    if (sqr.y <= 0) sqr.y = 0;
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            canvas.onmousedown = function (_e) {
+                const sqr = new Square(30);
+                sqr.color = getRandomColor();
+                sqr.x = _e.clientX - canvas.getBoundingClientRect().left - 15;
+                sqr.y = _e.clientY - canvas.getBoundingClientRect().top - 15;
+
+                arr.push(sqr);
+            };
+
+            canvas.ontouchstart = function (_e) {
+                const sqr = new Square(30);
+                sqr.color = getRandomColor();
+                sqr.x =
+                    _e.touches[0].clientX -
+                    canvas.getBoundingClientRect().left -
+                    15;
+                sqr.y =
+                    _e.touches[0].clientY -
+                    canvas.getBoundingClientRect().top -
+                    15;
+
+                arr.push(sqr);
+            };
+        </script>
+    </body>
+</html>

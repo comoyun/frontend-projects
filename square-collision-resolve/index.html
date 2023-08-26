@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Square Collision (response)</title>
+        <style type="text/css">
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                user-select: none;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+            }
+
+            html,
+            body {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                align-items: center;
+                flex-direction: column;
+            }
+
+            canvas {
+                background-color: #144;
+                width: 350px;
+                height: 300px;
+                border: 2px solid #144;
+            }
+
+            pre {
+                width: 350px;
+                background-color: #d9d9d9;
+                color: #444;
+                padding: 0.5em;
+                font-family: monospace;
+                font-weight: bold;
+                font-size: 15px;
+                overflow: auto;
+            }
+
+            .red {
+                background-color: rgba(250, 0, 0, 0.4);
+                color: #511;
+            }
+
+            .green {
+                background-color: rgba(0, 250, 0, 0.4);
+                color: #151;
+            }
+        </style>
+    </head>
+    <body>
+        <br />
+        <p>Double click to randomize the dimensions</p>
+        <canvas id="canvas" width="350" height="300"
+            >Canvas isn't supported on this browser, please update it.</canvas
+        >
+        
+        <pre id="code">{{Generated code}}</pre>
+
+<pre style="overflow: auto" id="ctx">
+vx = sqr2.x + sqr2.w * 0.5 - (sqr1.x + sqr1.w * 0.5);
+vy = sqr2.y + sqr2.h * 0.5 - (sqr1.y + sqr1.h * 0.5);
+
+if (vy * vy > vx * vx) {
+    if (vy > 0) {
+        sqr2.y = sqr1.y + sqr1.h;
+    } else {
+        sqr2.y = sqr1.y - sqr2.h;
+    }
+} else {
+    if (vx > 0) {
+        sqr2.x = sqr1.x + sqr1.w;
+    } else {
+        sqr2.x = sqr1.x - sqr2.w;
+    }
+}</pre
+        >
+
+        <script type="text/javascript">
+            var canvas = document.getElementById("canvas"),
+                code = document.getElementById("code"),
+                ctx = canvas.getContext("2d"),
+                x = 30,
+                y = 50,
+                debg = 0;
+
+            function FillText(_t) {
+                this.x = 0;
+                this.y = 0;
+                this.text = _t;
+                this.color = "#eff";
+                this.draw = function () {
+                    ctx.font = "13px normal monospace";
+                    ctx.fillStyle = this.color;
+                    ctx.fillText(this.text, this.x, this.y);
+                };
+            }
+
+            function Square(_d) {
+                this.x = 0;
+                this.y = 0;
+                this.color = "#177";
+                this.w = this.h = _d;
+                this.colliding = false;
+
+                this.draw = function () {
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y, this.w, this.h);
+                    if (this.colliding) {
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = "white";
+                        ctx.strokeRect(this.x, this.y, this.w, this.h);
+                    }
+                };
+            }
+
+            const sqr = new Square(40),
+                sqr2 = new Square(40),
+                logger = new FillText("no info"),
+                mouse = { x, y },
+                sq1badge = new FillText("no info"),
+                sq2badge = new FillText("no info");
+
+            sqr.x = canvas.width / 2 - sqr.w / 2;
+            sqr.y = canvas.height / 2 - sqr.h / 2;
+            sq1badge.text = "sqr1";
+            sq2badge.text = "sqr2";
+
+            sqr2.color = "#199";
+
+            logger.x = 10;
+            logger.y = 20;
+
+            animate();
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                logger.draw();
+
+                sqr2.draw();
+                sqr.draw();
+
+                sq1badge.draw();
+                sq2badge.draw();
+
+                sqr2.x = mouse.x - sqr.w * 0.5;
+                sqr2.y = mouse.y - sqr.h * 0.5;
+
+                sq1badge.x = sqr.x;
+                sq1badge.y = sqr.y - 6;
+                sq2badge.x = sqr2.x;
+                sq2badge.y = sqr2.y - 6;
+
+                if (collide(sqr, sqr2)) {
+                    // Collision response...
+                    code.innerHTML = generateCode();
+                    resolveCollision(sqr2, sqr);
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            function collide(_ob, _ob2) {
+                return (
+                    _ob.x <= _ob2.x + _ob2.w &&
+                    _ob.y <= _ob2.y + _ob2.h &&
+                    _ob.x + _ob.w >= _ob2.x &&
+                    _ob.y + _ob.h >= _ob2.y
+                );
+            }
+
+            function resolveCollision(_ob, _ob2) {
+                let vector_x, vector_y;
+
+                vector_x = _ob.x + _ob.w * 0.5 - (_ob2.x + _ob2.w * 0.5);
+                vector_y = _ob.y + _ob.h * 0.5 - (_ob2.y + _ob2.h * 0.5);
+
+                logger.text = `vector_x: ${vector_x.toFixed(
+                    1
+                )}, vector_y: ${vector_y.toFixed(1)}`;
+
+                if (vector_y * vector_y > vector_x * vector_x) {
+                    if (vector_y > 0) {
+                        debg = 0;
+                        _ob.y = _ob2.y + _ob2.h;
+                    } else {
+                        debg = 1;
+                        _ob.y = _ob2.y - _ob.h;
+                    }
+                } else {
+                    if (vector_x > 0) {
+                        debg = 2;
+                        _ob.x = _ob2.x + _ob2.w;
+                    } else {
+                        debg = 3;
+                        _ob.x = _ob2.x - _ob.w;
+                    }
+                }
+            }
+
+            function generateCode() {
+                return `
+vx = ${sqr2.x.toFixed(2)} + ${sqr2.w} * 0.5 - (${sqr.x.toFixed(2)} + ${
+                    sqr.w
+                } * 0.5);
+vy = ${sqr2.y.toFixed(2)} + ${sqr2.h} * 0.5 - (${sqr.h.toFixed(2)} + ${
+                    sqr.h
+                } * 0.5);
+
+if (vy * vy > vx * vx) {
+    if (vy > 0) {<p class="${debg == 0 ? "green" : ""}">        sqr2.y = ${
+                    sqr.y
+                } + ${sqr.h};</p>    } else {<p class="${
+                    debg == 1 ? "green" : ""
+                }">        sqr2.y = ${sqr.y} - ${sqr2.h};</p>    }
+} else {
+    if (vx > 0) {<p class="${debg == 2 ? "green" : ""}">        sqr2.x = ${
+                    sqr.x
+                } + ${sqr.w};</p>    } else {<p class="${
+                    debg == 3 ? "green" : ""
+                }">        sqr2.x = ${sqr.x} - ${sqr2.w};</p>    }
+}
+`;
+            }
+
+            function getRandomInteger(_min, _max) {
+                return Math.floor(Math.random() * (_max - _min) + _min);
+            }
+
+            canvas.onmousemove = function (_e) {
+                mouse.x = _e.clientX - canvas.getBoundingClientRect().left;
+                mouse.y = _e.clientY - canvas.getBoundingClientRect().top;
+            };
+
+            canvas.ondblclick = function (_e) {
+                sqr.w = getRandomInteger(30, 100);
+                sqr2.w = sqr.w;
+                sqr.h = sqr.w;
+                sqr2.h = sqr.w;
+            };
+
+            window.oncontextmenu = function (_e) {
+                _e.preventDefault();
+            };
+
+            canvas.ontouchmove = function (_e) {
+                mouse.x =
+                    _e.touches[0].clientX - canvas.getBoundingClientRect().left;
+                mouse.y =
+                    _e.touches[0].clientY - canvas.getBoundingClientRect().top;
+            };
+        </script>
+    </body>
+</html>

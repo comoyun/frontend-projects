@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>XML</title>
+        <style type="text/css">
+            *,
+            *::after,
+            *::before {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                width: 100%;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: #133;
+                color: white;
+                font-family: monospace;
+            }
+
+            .container {
+                width: 300px;
+                height: auto;
+                background-color: #fefefe;
+                box-shadow: 1px 2px 3px 4px rgba(0, 0, 0, 0.2);
+                border-radius: 5px;
+                color: #133;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                font-size: 18px;
+                padding: 0.5em 0.7em;
+                display: flex;
+                flex-direction: column;
+                gap: 0px;
+                transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            }
+
+            .user {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                height: 35px;
+            }
+
+            .user .age {
+                width: 15%;
+                text-align: center;
+                border-left: 1px solid #d9d9d9;
+                font-weight: bold;
+                color: #155;
+            }
+
+            h3 {
+                color: #155;
+                margin-bottom: 4px;
+            }
+
+            .skeleton {
+                background-color: #d9d9d9;
+                position: relative;
+                overflow: hidden;
+                margin: 0.1em 0;
+            }
+
+            .skeleton .name {
+                animation: toright 2s cubic-bezier(0.455, 0.03, 0.515, 0.955)
+                    infinite;
+                width: 30px;
+                background-color: #eee;
+                height: 100%;
+                position: absolute;
+            }
+
+            #skeletons {
+                overflow: hidden;
+            }
+
+            @keyframes toright {
+                from {
+                    left: -10%;
+                }
+
+                to {
+                    left: 150%;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <div id="skeletons">
+                <div class="user skeleton">
+                    <div class="name"></div>
+                    <div class="age"></div>
+                </div>
+                <div class="user skeleton">
+                    <div class="name"></div>
+                    <div class="age"></div>
+                </div>
+            </div>
+        </div>
+
+        <script src="./gsap.js"></script>
+        <script type="text/javascript">
+            const xhr = new XMLHttpRequest(),
+                containerEl = document.getElementsByClassName("container")[0],
+                skeletons = document.querySelector("#skeletons");
+
+            const manipulateXML = (_xmlResponse) => {
+                gsap.to("#skeletons", {
+                    opacity: 0,
+                    onComplete(_) {
+                        gsap.to(containerEl, {
+                            height: "350px",
+                            ease: "bounce",
+                            onComplete() {
+                                skeletons.style.display = "none";
+                                const users =
+                                    _xmlResponse.querySelectorAll("users user");
+                                users.forEach((user) => {
+                                    containerEl.innerHTML += `
+                                    <div class="user">
+                                        <div class="name">${
+                                            user.getElementsByTagName("name")[0]
+                                                .textContent
+                                        }</div>
+                                        <div class="age">${
+                                            user.getElementsByTagName("age")[0]
+                                                .textContent
+                                        }</div>
+                                    </div>
+                                `;
+                                });
+                            },
+                        });
+                    },
+                });
+            };
+
+            const fetchData = () => {
+                xhr.open("GET", "./users.xml");
+                xhr.onreadystatechange = (_event) => {
+                    if (
+                        _event.target.readyState === 4 &&
+                        _event.target.status === 200
+                    ) {
+                        const responseXML = _event.target.responseXML;
+                        manipulateXML(responseXML);
+                    }
+                };
+                xhr.send(null);
+            };
+
+            /* Stop for 3 seconds to show skeleton animation */
+            setTimeout(fetchData, 3000);
+        </script>
+    </body>
+</html>

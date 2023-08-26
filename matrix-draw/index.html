@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tile Rect</title>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html,
+        body {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        canvas {
+            background-color: #144;
+            width: 350px;
+            height: 300px;
+            border: 2px solid #144;
+            border-radius: 5px;
+        }
+
+        textarea {
+            width: 350px;
+            background-color: #d9d9d9;
+            color: #444;
+            padding: 0.5em;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 17px;
+            outline: none;
+            border-radius: 5px;
+            height: auto;
+            min-height: 200px;
+            resize: none;
+            outline: none;
+            overflow: auto;
+            border: none;
+        }
+
+        textarea:hover {
+            resize: none;
+            outline: none;
+        }
+
+        .red {
+            background-color: rgba(250, 0, 0, 0.4);
+            color: #511;
+            width: 350px;
+            padding: 0.6em;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+
+        .green {
+            background-color: rgba(0, 250, 0, 0.4);
+            color: #151;
+        }
+    </style>
+</head>
+
+<body>
+    <br />
+    <p>Edit the array below (1 indicates a block, 0 is a hidden block):</p>
+    <textarea id="array" contenteditable>
+[
+    [1, 1, 1, 1, 1, 0, 1, 0],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 1, 0, 0, 0, 1, 0]
+]</textarea>
+    <canvas id="canvas" width="350" height="300">Canvas isn't supported on this browser, please update.</canvas>
+    <div class="red">No errors.</div>
+    <br />
+
+    <script type="text/javascript">
+        var canvas = document.getElementById("canvas"),
+            array2 = document.getElementById("array"),
+            red = document.getElementsByClassName("red")[0],
+            ctx = canvas.getContext("2d"),
+            array = JSON.parse(array2.textContent) || [
+                [1, 1, 1, 1, 1, 0, 1, 0],
+                [0, 0, 1, 0, 0, 0, 1, 0],
+                [0, 0, 1, 0, 0, 0, 1, 1],
+                [0, 0, 1, 0, 0, 0, 1, 0],
+                [0, 0, 1, 0, 0, 0, 1, 0],
+            ],
+            els = [],
+            logger = new FillText("No info");
+
+        function FillText(_t) {
+            this.x = 10;
+            this.y = 20;
+            this.text = _t;
+            this.color = "#eff";
+            this.draw = function () {
+                ctx.font = "17px normal monospace";
+                ctx.fillStyle = this.color;
+                ctx.fillText(this.text, this.x, this.y);
+            };
+        }
+
+        function Square(_d) {
+            this.x = 0;
+            this.y = 0;
+            this.color = "#177";
+            this.w = this.h = _d;
+            this.colliding = false;
+
+            this.draw = function () {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+                if (this.colliding) {
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = "white";
+                    ctx.strokeRect(this.x, this.y, this.w, this.h);
+                }
+            };
+        }
+
+        function generate() {
+            els = [];
+            array.forEach((_c, _ind) => {
+                _c.forEach((_d, _ind2) => {
+                    const sqr = new Square();
+                    sqr.x =
+                        _ind2 * 30 +
+                        (canvas.width / 2 - (_c.length * 30) / 2);
+                    sqr.y =
+                        _ind * 30 +
+                        (canvas.height / 2 - (array.length * 30) / 2);
+                    sqr.w = 25;
+                    sqr.h = 25;
+
+                    _d === 1 ? (sqr.color = "#177") : (sqr.color = "#133");
+
+                    els.push(sqr);
+                });
+            });
+        }
+
+        generate();
+
+        animate();
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            els.forEach(el => el.draw());
+            logger.text = array[0].length + "x" + array.length;
+            logger.draw();
+
+            requestAnimationFrame(animate);
+        }
+
+        array2.onkeydown = () => {
+            setTimeout(() => {
+                try {
+                    red.innerHTML = "No errors.";
+                    array = JSON.parse(array2.value);
+                    generate();
+                } catch (_err) {
+                    red.innerHTML = _err;
+                    array = array || [
+                        [1, 1, 1, 1, 1, 0, 1, 0],
+                        [0, 0, 1, 0, 0, 0, 1, 0],
+                        [0, 0, 1, 0, 0, 0, 1, 0],
+                        [0, 0, 1, 0, 0, 0, 1, 0],
+                        [0, 0, 1, 0, 0, 0, 1, 0],
+                    ];
+                    generate();
+                }
+            }, 0);
+        };
+    </script>
+</body>
+
+</html>

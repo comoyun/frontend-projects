@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rain</title>
+</head>
+
+<body>
+
+    <canvas id="canvas" style="width: 100%; height: 100vh; position: absolute; left: 0; top: 0;">No canvas support,
+        update your browser...</canvas>
+
+    <script type="text/javascript">
+        let canvas = document.getElementById("canvas"),
+            ctx = canvas.getContext("2d"),
+            rainDrops = [],
+            _frame = 0;
+
+        canvas.width = innerWidth;
+        canvas.height = innerHeight;
+
+        const Drop = function (_x, _y) {
+            this.x = _x;
+            this.y = _y;
+            this.radius = 5;
+            this.alpha = 0.5;
+            this.inc = 0;
+
+            this.place = function () {
+                ctx.strokeStyle = `rgba(230, 230, 230, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.inc, 0, Math.PI * 2, false);
+                ctx.closePath();
+                ctx.stroke();
+            };
+
+            this.update = function () {
+                this.place();
+                this.inc += 1;
+                this.radius += 0.5;
+                this.alpha = scale(this.radius, 5, 60, 1, 0);
+            };
+        };
+
+        // took from StackOverflow :)
+        const scale = (_value, _inMin, _inMax, _outMin, _outMax) => {
+            return (_value - _inMin) * (_outMax - _outMin) / (_inMax - _inMin) + _outMin;
+        };
+
+        function random(_min, _max) {
+            return Math.floor(Math.random() * (_max - _min) + _min);
+        }
+
+        function drawBg() {
+            ctx.fillStyle = "rgba(150, 150, 150, 0.4)";
+            ctx.fillRect(0, 0, innerWidth, innerHeight);
+        }
+
+        function dropRain(_e) {
+            switch (_e.type) {
+                case "touchdown":
+                    rainDrops.push(new Drop(_e.touches[0].clientX, _e.touches[0].clientY));
+                    break;
+                case "mousedown":
+                    rainDrops.push(new Drop(_e.clientX, _e.clientY));
+                    break;
+            }
+        }
+
+        function draw() {
+            drawBg();
+
+            _frame++;
+
+            if (_frame % 30 === 0)
+                rainDrops.push(new Drop(random(0, innerWidth), random(0, innerHeight)));
+
+            rainDrops.forEach(_ => _.update());
+            rainDrops = rainDrops.filter(_ => _.radius < 60);
+
+
+            setTimeout(draw, 1000 / 60);
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            draw();
+        });
+
+        window.onmousedown = dropRain;
+        window.ontouchdown = dropRain;
+        window.oncontextmenu = _ => _.preventDefault();
+    </script>
+</body>
+
+</html>

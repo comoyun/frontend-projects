@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>RegExp Tester</title>
+        <link rel="stylesheet" href="./styles/style.css" />
+        <link rel="stylesheet" href="./lib/duDialog.css" />
+    </head>
+    <body>
+        <div class="container">
+            <h2 class="no-select">RegExp Tester</h2>
+<div class="text" contenteditable="plaintext-only">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Veniam
+ipsa sapiente ipsum, sequi quam doloremque ut vero distinctio
+voluptates deleniti.
+</div>
+            <div class="log">*log*</div>
+            <div class="inputs">
+                <input
+                    type="text"
+                    id="code"
+                    placeholder="Type RegExp code..."
+                /><input type="text" placeholder="flags" id="flags" value="g" />
+            </div>
+            <div class="inputs">
+                <input
+                    type="text"
+                    placeholder="Replace text"
+                    id="replace_txt"
+                    disabled
+                /><input type="checkbox" id="replace" />
+            </div>
+        </div>
+        <div class="helper no-select">Double click on screen to update.</div>
+        <script src="./lib/duDialog.js"></script>
+        <script src="./scripts/main.js"></script>
+    </body>
+</html>

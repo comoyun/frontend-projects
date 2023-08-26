@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Timestamp.</title>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            background-color: #133;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+
+        .first {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+        }
+
+        button {
+            width: 190px;
+            height: 40px;
+            background-color: #1aa;
+            color: #fefefe;
+            border: none;
+            font-size: 16px;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            outline: none;
+            border-radius: 10px;
+        }
+
+        input {
+            height: 40px;
+            width: 190px;
+            border: 1px solid #199;
+            padding: 0 .8em;
+            font-size: 16px;
+            color: white;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            border-radius: 10px;
+            background-color: #133;
+            outline: none;
+        }
+
+        pre {
+            min-width: 300px;
+            height: auto;
+            background-color: #144;
+            color: #fefefe;
+            font-size: 16px;
+            border-radius: 8px;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            padding: .7em .6em;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-height: 150px;
+            max-height: 160px;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        p {
+            font-size: 17px;
+            border: 1px solid #155;
+            border-radius: 3px;
+            padding: .2em .5em;
+        }
+
+        .ins {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-family: monospace;
+            color: #188;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        kbd {
+            background-color: #122;
+            border-radius: 3px;
+            padding: .2em .5em;
+        }
+
+        .kbd-green {
+            background-color: #1aa;
+            border-radius: 3px;
+            padding: .2em .5em;
+            user-select: all;
+        }
+
+        .timestamp {
+            transition: .2s cubic-bezier(0.075, 0.82, 0.165, 1);
+            padding: .2em 0;
+            cursor: pointer;
+        }
+
+        .timestamp:hover {
+            background-color: rgba(0, 140, 140, 0.1);
+        }
+
+        .f {
+            overflow: hidden;
+            max-height: 210px;
+        }
+
+        pre::-webkit-scrollbar {
+            width: 8px;
+            background-color: #144;
+            border-radius: 5px;
+        }
+
+        pre::-webkit-scrollbar-thumb {
+            background-color: #166;
+        }
+
+        .ff {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- This is my messed up code, but hey! it works! -->
+    <div class="first">
+        <button id="start">Start</button>
+        <button class="add">Add</button>
+        <input type="text" placeholder="Type title here...">
+        <input type="text" id="set" placeholder="Set time...">
+    </div>
+    <div class="first f">
+        <div class="ff">
+            <p>Timer</p>Timestamps<kbd
+                style="font-size: 16px; cursor: pointer; user-select:none;display: flex;justify-content: center;align-items: center;"
+                class="kbd-green">Copy!</kbd>
+        </div>
+        <pre></pre>
+    </div>
+
+    <div class="ins">
+        <div>
+            Press <kbd>space</kbd> to add a checkpoint.
+        </div>
+        <div>Press <kbd>F11</kbd> to go fullscreen...</div>
+    </div>
+
+    <script type="text/javascript">
+        let startBtn = document.querySelector("#start"),
+            addBtn = document.querySelector(".add"),
+            text = document.querySelector("input"),
+            set = document.querySelector("#set"),
+            timer = document.querySelector("p"),
+            timestamps = document.querySelector("pre"),
+            inc = 0,
+            interval,
+            array = [],
+            savedDate = "";
+
+        startBtn.onclick = function () {
+            inc = 0;
+            startBtn.textContent = "Restart";
+            timer.innerText = generate(inc);
+
+            if (interval) clearInterval(interval);
+
+            interval = setInterval(function () {
+                ++inc;
+                timer.innerText = generate(inc);
+
+            }, 1000);
+        }
+
+        function start() {
+            text.focus();
+            setTimeout(() => text.value = "", 0);
+            addBtn.textContent = `Adding (${generate(inc)})`;
+            savedDate = generate(inc);
+        }
+
+        addBtn.onclick = function () {
+            start();
+        }
+
+        text.onkeydown = function (_e) {
+            if (_e.key.toLowerCase() == "enter") add();
+        }
+
+        function add() {
+            array.push({
+                savedDate: savedDate ? savedDate : generate(inc),
+                value: text.value
+            });
+            text.value = "";
+            savedDate = "";
+            addBtn.textContent = "Add";
+            update();
+            timestamps.scroll(0, timestamps.scrollHeight);
+        }
+
+        function update() {
+            timestamps.innerHTML = "";
+            array.forEach(_item => {
+                timestamps.innerHTML += "\n<div class='timestamp'><kbd class='kbd-green'>" + _item.savedDate + "</kbd> - " + _item.value + "</timestamp>";
+            });
+            setTimeout(() => addBtn.focus(), 0);
+        }
+
+        function generate(_n) {
+            let minutes = Math.floor(_n / 60),
+                seconds = _n % 60;
+
+            return `${minutes < 10 ? "0" + minutes : minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
+        }
+
+        function viceVersa(_str) {
+            const split = _str.split(":"),
+                leftSide = split[0],
+                rightSide = split[1];
+            return leftSide * 60 + +rightSide;
+        }
+
+        window.onkeydown = function (_e) {
+            if (_e.key === " " && _e.target != text && _e.target != set) start();
+        }
+
+        set.onkeydown = function (_e) {
+            if (_e.key.toUpperCase() == "ENTER") {
+                inc = viceVersa(_e.target.value);
+                timer.innerText = generate(inc);
+                if (interval) {
+                    clearInterval(interval);
+                    interval = setInterval(function () {
+                        ++inc;
+                        timer.innerText = generate(inc);
+
+                    }, 1000);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

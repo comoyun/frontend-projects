@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plants vs Zombies (Rectangle Version)</title>
+  <style>
+    body,
+    html {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    canvas {
+      width: 435px;
+      height: 350px;
+      border-radius: 8px;
+      box-shadow: 2px 2px 3px 4px rgba(0, 0, 0, 0.1);
+      background-color: #090;
+    }
+
+    #status {
+      font-size: 30px;
+      font-weight: bold;
+      position: absolute;
+      font-family: bold;
+      left: 40px;
+      top: 40px;
+      color: #444;
+    }
+
+    @keyframes warn {
+      from {
+        text-shadow: 1px 1px 1px red;
+      }
+
+      to {
+        text-shadow: 3px 3px 3px red;
+      }
+    }
+
+    @keyframes classic {
+      from {
+        left: -50%;
+        top: -50%;
+        transform: translate(0%, 0%);
+      }
+
+      to {
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    @-webkit-keyframes classic {
+      from {
+        left: -50%;
+        top: -50%;
+        transform: translate(0%, 0%);
+      }
+
+      to {
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+
+      }
+    }
+
+    @-moz-keyframes classic {
+      from {
+        left: -50%;
+        top: -50%;
+        transform: translateX(0%, 0%);
+      }
+
+      to {
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas">
+    <!--
+            CANVAS
+        -->
+  </canvas>
+  <div id="status">
+  </div>
+
+  <script type="text/javascript">
+    /* requestAnimationFrame funksiyasi bazi browserlarda ishlamasligi mumkin...
+        p.s window obyectini yozish shart emas.
+    */
+    window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window
+      .mozRequestAnimationFrame || window.oRequestAnimationFrame;
+    const stat = document.getElementById("status");
+    // Shakllar...
+
+    class GameObject {
+      constructor(_x = 0, _y = 0, _w = 10, _h = 10) {
+        this.x = _x;
+        this.y = _y;
+        this.w = _w;
+        this.h = _h;
+        this.r = 10;
+        this.velocity = {
+          x: 9,
+          y: 9
+        };
+      }
+
+      getWidth() {
+        return this.w;
+      }
+
+      getHeight() {
+        return this.h;
+      }
+
+      getCentreX() {
+        return this.x + (this.getWidth() * 0.5);
+      }
+
+      getCentreY() {
+        return this.y + (this.h * 0.5);
+      }
+
+      getRight() {
+        return this.x + this.w;
+      }
+
+      getLeft() {
+        return this.x;
+      }
+
+      getTop() {
+        return this.y;
+      }
+
+      getBottom() {
+        return this.y + this.h;
+      }
+
+      getDistX(_obj) {
+        return Math.abs(this.x - _obj.x);
+      }
+
+      getDistY(_obj) {
+        return Math.abs(this.y - _obj.y);
+      }
+
+      getAbsDistX(_obj) {
+        return this.x - _obj.x;
+      }
+
+      getAbsDistY(_obj) {
+        return this.y - _obj.y;
+      }
+
+      getAbsDistSimX(_x) {
+        return this.x - _x;
+      }
+
+      getAbsDistSimY(_y) {
+        return this.y - _y;
+      }
+
+      getDist(_obj) {
+        return Math.sqrt(Math.pow(_obj.x - this.x, 2) + Math.pow(_obj.y - this.y, 2));
+      }
+
+      setPos(_x, _y) {
+        this.x = _x,
+          this.y = _y;
+      }
+
+      setDim(_w, _h) {
+        this.w = _w,
+          this.h = _h;
+      }
+
+      collideWith(_obj, _add = 0) {
+        if (
+          (this.getRight() - _add >= _obj.getLeft() &&
+            this.getLeft() + _add <= _obj.getRight() &&
+            this.getTop() - _add <= _obj.getBottom() &&
+            this.getBottom() - _add >= _obj.getTop()
+          )) {
+          return true;
+        }
+        return false;
+      }
+
+      circCollideWith(_obj, _add = 0) {
+        return this.getDist(_obj) <= _obj.r + this.r;
+      }
+    }
+
+    class Rect extends GameObject {
+      constructor(_opt) {
+        super();
+        this.x = _opt.x;
+        this.y = _opt.y;
+        this.w = _opt.h;
+        this.h = _opt.w;
+        this.color = _opt.color;
+        this.sprite = _opt.image;
+        this.preferredType = _opt.type || "simple";
+        this.health = 100;
+        this.vx = -0.23;
+        this.shooting_time = 0;
+      }
+
+      draw(_ctx) {
+        if (this.preferredType === "sprite") {
+          _ctx.drawImage(this.sprite, this.x, this.y, this.w, this.h);
+        } else {
+          _ctx.fillStyle = this.color;
+          _ctx.fillRect(this.x, this.y, this.w, this.h);
+          _ctx.fillStyle = "red";
+          _ctx.font = "16px times bolder";
+          _ctx.textBaseline = "center";
+          _ctx.fillText(Math.floor(this.health) + "%", this.x + this.w / 2 - 20, this.y + this.h / 2, this
+            .w);
+        }
+      }
+      enemyUpdate(_ctx) {
+        this.draw(_ctx);
+        this.x += this.vx;
+        var index = Game.players.findIndex((el) => {
+          return rectIntersect(el, this)
+        });
+        if (index !== -1) {
+          this.vx = 0;
+          Game.players[index].health -= 0.1;
+        } else {
+          this.vx = -0.23;
+        }
+        if (!Game.warn) {
+          if (this.x < (Game.COLS + 1) * Game.box_width) {
+            Game.warn = true;
+            text =
+              "<span style='color: red;'>Diqqat, dushman yaqinlashmoqda!</span>";
+          }
+        }
+      }
+      update(_ctx) {
+        this.draw(_ctx);
+        if (Game.warn) {
+          if (this.shooting_time > 15) {
+            this.shooting_time = 0;
+            const projectile = new Projectile({
+              x: this.x + this.w / 2,
+              y: this.y + this.h / 2,
+              r: 5,
+              color: "yellow"
+            });
+            Game.playerProjectiles.push(projectile);
+          } else {
+            this.shooting_time += 0.1;
+          }
+        }
+      }
+    }
+    var text = "";
+    class StrokeRect extends GameObject {
+      constructor(_opt) {
+        super();
+        this.x = _opt.x;
+        this.y = _opt.y;
+        this.w = _opt.w;
+        this.h = _opt.h;
+      }
+
+      draw(_ctx) {
+        _ctx.strokeStyle = "#fefefe";
+        _ctx.lineWidth = 2;
+        _ctx.beginPath();
+        _ctx.rect(this.x, this.y, this.w, this.h);
+        _ctx.closePath();
+        _ctx.stroke();
+      }
+    }
+
+    class Projectile extends GameObject {
+      constructor(_opt = {}) {
+        super();
+        this.color = _opt.color;
+        this.r = _opt.r;
+        this.x = _opt.x;
+        this.y = _opt.y;
+        this.sprite = _opt.image;
+        this.vx = 2;
+        this.index = 0;
+        this.preferredType = _opt.type || "simple";
+      }
+
+      draw(_ctx) {
+        if (this.preferredType === "sprite") {
+          _ctx.drawImage(this.sprite, this.x, this.y, this.r, this.r);
+        } else {
+          _ctx.fillStyle = this.color;
+          _ctx.beginPath();
+          _ctx.arc(this.x, this.y, this.r, Math.PI * 2, 0, false);
+          _ctx.closePath();
+          _ctx.fill();
+        }
+      }
+
+      update(_ctx) {
+        this.draw(_ctx);
+        this.x += this.vx;
+
+
+      }
+    }
+
+    class Explode extends GameObject {
+      constructor() {
+        super();
+        this.alpha = 1;
+        this.color = "rgba(253,207,88, " + this.alpha + ")";
+        this.r = 3;
+      }
+
+      draw(_ctx) {
+        this.x += this.velocity.x;
+        this.y += this.velocity.y;
+        _ctx.fillStyle = "rgba(253,207,88, " + this.alpha + ")";
+        _ctx.beginPath();
+        _ctx.arc(this.x, this.y, this.r, Math.PI * 2, 0, false);
+        _ctx.closePath();
+        _ctx.fill();
+        this.alpha -= 0.01;
+      }
+    }
+    const ell = document.createElement("div");
+    ell.style.cssText =
+      "text-align: center;font-weight: bolder; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 55px; color: #fff; text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.3)";
+
+
+    const Game = {
+        buffer: undefined,
+        element: undefined,
+        width: 0,
+        max_players: 8,
+        height: 0,
+        enemies: [],
+        players: [],
+        grid: [],
+        warn: false,
+        COLS: 5,
+        ROWS: 4,
+        box_width: 0,
+        box_height: 0,
+        money: 1000, // DO NOT MODIFY :)
+        playerProjectiles: [],
+        shooting_time: 0,
+        state: undefined,
+        mouse: {
+          x: undefined,
+          y: undefined,
+          w: 5,
+          h: 5
+        },
+        xyholder: [],
+        animation: undefined,
+        activeGrid: [undefined, undefined],
+        gameEnd: function() {
+          setTimeout(function() {
+            document.body.appendChild(ell);
+            ell.innerText = "O'yin tugadi, Siz " + Game.state;
+            ell.style.animation = "classic 3s linear"
+          }, 1000);
+        },
+        makeGrid: function() {
+          Game.grid = [];
+          const width = Game.width;
+          const height = Game.height;
+          const ROWS = Game.ROWS;
+          const COLS = Game.COLS;
+          const box_width = width / COLS;
+          const box_height = height / ROWS;
+          Game.box_width = box_width;
+          Game.box_height = box_height;
+          for (var column = 0; column < ROWS; column++) {
+            Game.grid[column] = [];
+            for (var row = 0; row < COLS; row++) {
+              Game.grid[column][row] = new StrokeRect({
+                x: row * box_width,
+                y: column * box_height,
+                w: box_width,
+                h: box_height
+              });
+            }
+          }
+        },
+        init: function(_selector, _w, _h) {
+          this.element = document.querySelector(_selector);
+          this.buffer = this.element.getContext("2d");
+          this.element.width = _w;
+          this.element.height = _h;
+          this.width = _w;
+          this.height = _h;
+        },
+        animate: function() {
+          Game.clearScreen();
+          Game.update();
+          if (!Game.end) {
+            window.requestAnimationFrame(this.animate.bind(this));
+          } else {
+            Game.gameEnd()
+          }
+        },
+        clearScreen: function() {
+          Game.buffer.clearRect(0, 0, Game.width, Game.height);
+        },
+        update: function() {
+          Game.highlite();
+          Game.updatePlayers();
+          Game.updateStatus();
+          Game.updateEnemies();
+          Game.updateProjectiles();
+        },
+        updateProjectiles() {
+          Game.playerProjectiles.forEach(function(el, ind) {
+            el.update(Game.buffer);
+            Game.enemies.forEach((en, index) => {
+              if (rectIntersect(el, en)) {
+                Game.enemies[index].health -= 5;
+                Game.playerProjectiles.splice(ind, 1);
+              }
+            });
+          });
+        },
+        updateEnemies: function() {
+          Game.enemies = Game.enemies.filter((el) => el.health > 0);
+          if (Game.enemies.length === 0) {
+            Game.state =
+              "yutdingiz, Qoyil!";
+            Game.end = true;
+          }
+          Game.enemies.forEach(function(el) {
+            el.enemyUpdate(Game.buffer);
+            if (el.x <= 0) {
+              Game.state = "yutqazdingiz :(";
+              Game.end = true;
+            }
+          });
+        },
+        updatePlayers: function() {
+          Game.players = Game.players.filter((el) => el.health > 0);
+          Game.players.forEach(function(el) {
+            el.update(Game.buffer);
+          });
+        },
+        updateStatus: function() {
+          stat.innerHTML = "<span style='color: #cc0'> PUL: " + (Game.max_players * 1000) + "</span> " +
+            text;
+        },
+        highlite: function() {
+          Game.grid.forEach(function(row, index) {
+            Game.activeGrid[0] = row.findIndex(function(el) {
+              return rectIntersect(Game.mouse, el)
+            });
+            if (Game.activeGrid[0] !== -1) {
+              Game.activeGrid[1] = index;
+              Game.grid[Game.activeGrid[1]][Game.activeGrid[0]].draw(Game.buffer);
+            }
+          });
+        },
+        addPlayer: function() {
+          if (this.max_players > 0) {
+            Game.grid.forEach(function(row, index) {
+                Game.activeGrid[0] = row.findIndex(function(el) {
+                  return rectIntersect(Game.mouse, el)
+                });
+                Game.activeGrid[1] = index;
+                const captured = Game.grid[Game.activeGrid[1]][Game.activeGrid[0]];
+                if (Game.activeGrid[0] !== -1 && Game.max_players > 0 && (
+                    Game.xyholder.length === 0 ||
+                    !Game.xyholder.some((el) => {
+                        return el.x == captured.x  + 2.5 && el.y == captured.y + 2.5;})
+                    )) {
+
+                Game.max_players -= 1;
+
+                Game.xyholder.push({
+                  x: captured.x + 2.5,
+                  y: captured.y + 2.5
+                })
+                const player = new Rect({
+                  x: captured.x + 2.5,
+                  y: captured.y + 2.5,
+                  w: Game.box_width - 5,
+                  h: Game.box_height - 5,
+                  color: "cyan"
+                });
+                Game.players.push(player);
+              }
+            });
+        }
+      },
+      addZomb: function() {
+        for (var d = Game.COLS + 1; d < Game.COLS + 8; d++) {
+          const randoms = Game.grid.map(function(el) {
+            return el[Math.floor(Math.random() * el.length)]
+          });
+          const random = randoms[Math.floor(Math.random() * randoms.length)];
+          var enemy = new Rect({
+            color: "#c00",
+            x: (d * 1.5) * Game.box_width + 2.5,
+            y: random.y + 2.5,
+            w: Game.box_width - 5,
+            h: Game.box_height - 5,
+          });
+          Game.enemies.push(enemy);
+        }
+      },
+      mouseDown: function(_ev) {
+        Game.mouse.x = _ev.clientX - Game.element.getBoundingClientRect().left;
+        Game.mouse.y = _ev.clientY - Game.element.getBoundingClientRect().top;
+        Game.addPlayer();
+      },
+      mouseMove: function(_ev) {
+        Game.mouse.x = _ev.clientX - Game.element.getBoundingClientRect().left;
+        Game.mouse.y = _ev.clientY - Game.element.getBoundingClientRect().top;
+      },
+      mouseEnd: function() {
+        Game.mouse.x = undefined;
+        Game.mouse.y = undefined;
+      },
+      // Mobil telefonlar uchun...
+      touchStart: function() {
+        var x = Game.mouse.x;
+        var y = Game.mouse.y;
+      },
+      touchMove: function(_ev) {
+        Game.mouse.x = _ev.clientX - Game.element.getBoundingClientRect().left;
+        Game.mouse.y = _ev.clientY - Game.element.getBoundingClientRect().top;
+      },
+      touchEnd: function() {
+        Game.mouse.x = undefined;
+        Game.mouse.y = undefined;
+      }
+    }
+
+    function rangeIntersect(min0, max0, min1, max1) {
+      return Math.min(min1, max1) <= Math.max(min0, max0) &&
+        Math.min(min0, max0) <= Math.max(min1, max1);
+    }
+
+    function rectIntersect(r0, r1) {
+      return rangeIntersect(r0.x, r0.x + r0.w, r1.x, r1.x + r1.w) &&
+        rangeIntersect(r0.y, r0.y + r0.h, r1.y, r1.y + r1.h);
+    }
+
+    // Activate the Game!!!
+    Game.init("#canvas", 435, 350);
+    Game.makeGrid();
+    Game.addZomb();
+
+    // Events...
+    Game.element.addEventListener("mousemove", Game.mouseMove);
+    Game.element.addEventListener("mousedown", Game.mouseDown);
+    Game.element.addEventListener("mouseleave", Game.mouseEnd);
+    // Mobil telefonlar uchun...
+    Game.element.addEventListener("touchmove", Game.mouseMove);
+    Game.element.addEventListener("touchdown", Game.mouseDown);
+    Game.element.addEventListener("touchend", Game.mouseEnd);
+    Game.animate();
+  </script>
+</body>
+
+</html>

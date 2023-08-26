@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rain</title>
+</head>
+
+<body>
+
+    <canvas id="canvas" style="width: 100%; height: 100vh; position: absolute; left: 0; top: 0;">No canvas support,
+        update your browser...</canvas>
+
+    <script type="text/javascript">
+        let canvas = document.getElementById("canvas"),
+            ctx = canvas.getContext("2d"),
+            rainDrops = [],
+            _inc = 0;
+
+        canvas.width = innerWidth;
+        canvas.height = innerHeight;
+
+        const Drop = function (_x, _y) {
+            this.x = _x;
+            this.y = _y;
+            this.len = 5;
+            this.z = 10;
+            this.alpha = 1;
+            this.gravity = 0.01;
+            this.vy = random(2, 4);
+            this.backVY = this.vy;
+
+            this.place = function () {
+                ctx.strokeStyle = `rgba(170, 170, 170, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x, this.y + this.len);
+                ctx.closePath();
+                ctx.stroke();
+            };
+            this.update = function () {
+                this.place();
+                this.y += this.vy;
+                this.vy += this.gravity;
+
+                if (this.y > innerHeight - ground.height) {
+                    ground.height += 0.0005;
+                    this.y = random(-200, -innerHeight);
+                    this.vy = this.backVY;
+                }
+            };
+        };
+
+        const scale = (_value, _inMin, _inMax, _outMin, _outMax) => {
+            return (_value - _inMin) * (_outMax - _outMin) / (_inMax - _inMin) + _outMin;
+        };
+
+        function generate(_len) {
+            rainDrops = [];
+            for (let i = 0; i < _len; i++) {
+                let rX = random(0, innerWidth),
+                    rY = random(-100, -innerHeight * 3),
+                    drop = new Drop(rX, rY);
+                drop.z = random(10, 20);
+
+                drop.gravity = scale(drop.z, 10, 20, 0.2, 0.1);
+                drop.alpha = scale(drop.z, 10, 20, 1, 0);
+                drop.len = scale(drop.z, 10, 20, 15, 5);
+
+                rainDrops.push(drop);
+            }
+        }
+
+        function random(_min, _max) {
+            return Math.floor(Math.random() * (_max - _min) + _min);
+        }
+
+        function Ground() {
+            this.height = 5;
+            this.sin = 0;
+
+            this.place = function () {
+                ctx.fillStyle = "#d9d9d9";
+                ctx.strokeStyle = "red";
+                ctx.beginPath();
+                ctx.moveTo(0, innerHeight - this.height);
+
+                for (let i = 0; i < innerWidth; i++) {
+                    this.sin = Math.sin((i * Math.PI / 180)) * 10;
+
+                    ctx.lineTo(i, innerHeight - this.height - this.sin);
+                }
+                ctx.lineTo(innerWidth, innerHeight - this.height);
+                ctx.fill();
+                ctx.closePath();
+                ctx.fillRect(0, innerHeight - this.height, innerWidth, this.height);
+            }
+        }
+
+        function drawBg() {
+            ctx.fillStyle = "rgba(120, 120, 120, 0.5)";
+            ctx.fillRect(0, 0, innerWidth, innerHeight);
+        }
+
+        const ground = new Ground();
+
+        function draw() {
+
+            drawBg();
+
+            rainDrops.forEach(_ => _.update());
+
+            ground.place();
+
+            setTimeout(draw, 1000 / 60);
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            generate(innerWidth * 2);
+            draw();
+        });
+    </script>
+</body>
+
+</html>

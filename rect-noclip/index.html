@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rectangle Noclip</title>
+        <style type="text/css">
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            canvas {
+                background-color: #177;
+                margin-top: 10px;
+                border-radius: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas width="300" height="300" id="canvas">No Canvas Support</canvas>
+
+        <script type="text/javascript">
+            let canvas = document.getElementById("canvas"),
+                ctx = canvas.getContext("2d");
+
+            const Rect = function (_x = 10, _y = 10) {
+                this.x = _x;
+                this.y = _y;
+                this.width = 100;
+                this.height = 150;
+                this.color = "#155";
+                this.movingDown = false;
+                this.movingLeft = false;
+                this.movingUp = false;
+                this.movingRight = false;
+                this.initialVX = 1;
+                this.initialVY = 3;
+                this.vx = 1;
+                this.vy = 0;
+                this.frictionX = 0.02;
+                this.gravity = 0.2;
+                this.maxJumpHeight = canvas.height / 3;
+                this.identical = false;
+
+                this.draw = function () {
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                };
+                this.update = function () {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.movingLeft) {
+                        this.vx = -this.initialVX;
+                    } else {
+                        if (this.vx > this.frictionX) {
+                            this.vx -= this.frictionX;
+                            if (this.vx < this.frictionX) this.vx = 0;
+                        }
+                    }
+
+                    if (this.movingRight) {
+                        this.vx = this.initialVX;
+                    } else {
+                        if (this.vx < -this.frictionX) {
+                            this.vx += this.frictionX;
+                            if (this.vx > -this.frictionX) this.vx = 0;
+                        }
+                    }
+
+                    if (this.movingUp && this.y > this.maxJumpHeight) {
+                        this.vy = -this.initialVY;
+                    } else {
+                        if (this.y != canvas.height - 130) {
+                            this.vy += this.gravity;
+                        }
+                    }
+
+                    if (this.y >= canvas.height - 130)
+                        this.y = canvas.height - 130;
+
+                    this.logic();
+                };
+
+                this.logic = function () {};
+            };
+
+            let ground = new Rect(0, canvas.height - 40),
+                player = new Rect(20, ground.y - 90),
+                playerIdentical = new Rect(-canvas.width + 20, ground.y - 90);
+
+            ground.color = "#144";
+            ground.width = canvas.width;
+            ground.height = 40;
+
+            player.height = 90;
+            player.width = 90;
+
+            playerIdentical.height = 90;
+            playerIdentical.width = 90;
+            playerIdentical.identical = true;
+
+            animate();
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                player.draw();
+                player.update();
+                playerIdentical.draw();
+                playerIdentical.update();
+
+                if (playerIdentical.x > canvas.width)
+                    playerIdentical.x = -canvas.width;
+                if (player.x > canvas.width) player.x = -canvas.width;
+
+                if (playerIdentical.x < -canvas.width)
+                    playerIdentical.x = canvas.width;
+                if (player.x < -canvas.width) player.x = canvas.width;
+
+                ground.draw();
+                requestAnimationFrame(animate);
+            }
+
+            window.onkeydown = function (_e) {
+                if (_e.key === "ArrowRight") {
+                    player.movingRight = true;
+                    playerIdentical.movingRight = true;
+                }
+                if (_e.key === "ArrowLeft") {
+                    player.movingLeft = true;
+                    playerIdentical.movingLeft = true;
+                }
+                if (_e.key === "ArrowUp") {
+                    player.movingUp = true;
+                    playerIdentical.movingUp = true;
+                }
+            };
+
+            window.onkeyup = function (_e) {
+                if (_e.key === "ArrowRight") {
+                    player.movingRight = false;
+                    playerIdentical.movingRight = false;
+                }
+                if (_e.key === "ArrowLeft") {
+                    player.movingLeft = false;
+                    playerIdentical.movingLeft = false;
+                }
+                if (_e.key === "ArrowUp") {
+                    player.movingUp = false;
+                    playerIdentical.movingUp = false;
+                }
+            };
+        </script>
+    </body>
+</html>

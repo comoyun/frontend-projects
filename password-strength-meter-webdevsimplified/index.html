@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Password Tester</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                background-color: #133;
+                color: white;
+                font-family: sans-serif;
+                height: 100vh;
+                width: 100vw;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+                overflow: hidden;
+            }
+
+            .strength-meter {
+                height: 1.7rem;
+                width: 40%;
+                border-radius: 50px;
+                border: 3px solid #199;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .strength-meter::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                height: 100%;
+                width: calc(var(--strength, 0) * 1%);
+                background-color: #155;
+                transition: .3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            }
+
+            .password-input {
+                width: 40%;
+                padding: .45rem .75rem;
+                border: 2px solid #177;
+                text-align: center;
+                color: white;
+                background-color: #155;
+                outline: none;
+                border-radius: 5px;
+                font-size: 17px;
+            }
+
+            .password-input:focus {
+                border-color: #199;
+            }
+
+            #reasons > * {
+                margin-top: .5rem;
+                color: #bff;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Password Strength Test</h1>
+        <div class="strength-meter"></div>
+        <input type="text" class="password-input" value="Password" autofocus/>
+        <div id="reasons">
+        </div>
+        <script src="./script.js"></script>
+    </body>
+</html>

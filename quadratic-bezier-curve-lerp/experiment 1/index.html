@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadratic Bezier Curve!</title>
+
+    <link rel="stylesheet" href="./style.css">
+
+</head>
+
+<body>
+
+    <script src="./Canvas2D.js" type="text/javascript"></script>
+    <script type="text/javascript">
+
+        const c = new Canvas2D({ resetFrame: true });
+
+        c.setSize(true);
+
+        function lerp(_min, _max, _val) {
+            return _val * (_max - _min) + _min;
+        }
+
+        c.animate(() => {
+            c.ctx.strokeStyle = "#188";
+            c.ctx.fillStyle = "#188";
+
+            c.ctx.beginPath();
+            c.ctx.moveTo(c.centerX - 100, c.centerY);
+            c.ctx.lineTo(c.Mouse.x, c.Mouse.y);
+            c.ctx.stroke();
+
+            c.ctx.beginPath();
+            c.ctx.moveTo(c.Mouse.x, c.Mouse.y);
+            c.ctx.lineTo(c.centerX + 100, c.centerY);
+            c.ctx.stroke();
+
+            c.ctx.beginPath();
+            for (let i = 0; i < 1; i += 0.05) {
+                let x1 = lerp(c.centerX - 100, c.Mouse.x, i),
+                    y1 = lerp(c.centerY, c.Mouse.y, i),
+                    x2 = lerp(c.Mouse.x, c.centerX + 100, i),
+                    y2 = lerp(c.Mouse.y, c.centerY, i),
+                    x3 = lerp(x1, x2, i),
+                    y3 = lerp(y1, y2, i);
+
+                c.ctx.moveTo(x1, y1); c.ctx.lineTo(x3, y3);
+            }
+            c.ctx.stroke();
+        });
+
+    </script>
+</body>
+
+</html>

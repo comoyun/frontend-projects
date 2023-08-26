@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyllotaxis</title>
+    <style>
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-color: #133;
+        }
+
+        #inp {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            z-index: 99;
+        }
+    </style>
+</head>
+
+<body>
+
+    <input type="range" min="0" max="360" value="137.5" id="inp">
+
+    <script>
+        class Canvas2D {
+            constructor({
+                width = 200,
+                height = 250,
+                parent = document.body,
+                resetFrame = false
+            }) {
+                window.requestAnimationFrame =
+                    window.requestAnimationFrame ||
+                    window.oRequestAnimationFrame ||
+                    window.mozRequestAnimationFrame ||
+                    window.webkitRequestAnimationFrame;
+
+                this.anim = null;
+                this.Keyboard = {
+                    active: false,
+                    key: "",
+                    arrows: {
+                        left: false,
+                        right: false,
+                        down: false,
+                        up: false,
+                    },
+                    event(_e) {
+                        switch (_e.type) {
+                            case "keydown":
+                                // special keys
+                                if (_e.key == "ArrowLeft") this.arrows.left = true;
+                                if (_e.key == "ArrowRight") this.arrows.right = true;
+                                if (_e.key == "ArrowDown") this.arrows.down = true;
+                                if (_e.key == "ArrowUp") this.arrows.up = true;
+
+                                this.active = true;
+                                this.key = _e.key;
+
+                                break;
+
+                            case "keyup":
+                                if (_e.key == "ArrowLeft") this.arrows.left = false;
+                                if (_e.key == "ArrowRight") this.arrows.right = false;
+                                if (_e.key == "ArrowDown") this.arrows.down = false;
+                                if (_e.key == "ArrowUp") this.arrows.up = false;
+
+                                this.active = false;
+                                this.key = "";
+
+                                break;
+                        }
+                    },
+
+                    resetArrowKeys() {
+                        this.arrows.left = false;
+                        this.arrows.right = false;
+                        this.arrows.down = false;
+                        this.arrows.up = false;
+                    },
+                };
+
+                let canvas = (this.canvas = document.createElement("canvas"));
+                this.ctx = this.canvas.getContext("2d");
+                this.resetFrame = resetFrame;
+                this.setSize(width || true, height);
+
+                this.Mouse = {
+                    active: false,
+                    x: undefined,
+                    y: undefined,
+                    event(_e) {
+                        switch (_e.type) {
+                            case "touchstart":
+                                this.x = _e.touches[0].clientX;
+                                this.y = _e.touches[0].clientY;
+
+                                this.active = true;
+                                break;
+                            case "touchmove":
+                                this.x = _e.touches[0].clientX;
+                                this.y = _e.touches[0].clientY;
+                                break;
+                            case "touchend":
+                                this.active = false;
+                                break;
+                            case "mousedown":
+                                this.x = _e.clientX;
+                                this.y = _e.clientY;
+
+                                this.active = true;
+                                break;
+                            case "mousemove":
+                                this.x = _e.clientX;
+                                this.y = _e.clientY;
+                                break;
+                            case "mouseup":
+                                this.active = false;
+                                break;
+                        }
+                        this.x -= canvas.getBoundingClientRect().left;
+                        this.y -= canvas.getBoundingClientRect().top;
+                    },
+                };
+
+                parent.appendChild(this.canvas);
+
+                window.addEventListener("keydown", this.Keyboard.event);
+                window.addEventListener("keyup", this.Keyboard.event);
+                this.canvas.addEventListener("touchstart", this.Mouse.event);
+                this.canvas.addEventListener("mousedown", this.Mouse.event);
+                this.canvas.addEventListener("touchend", this.Mouse.event);
+                this.canvas.addEventListener("mouseup", this.Mouse.event);
+                this.canvas.addEventListener("mousemove", this.Mouse.event);
+                this.canvas.addEventListener("touchmove", this.Mouse.event);
+            }
+
+            setSize(_w, _h) {
+                if (!_w === true) {
+                    this.centerX = (this.width = this.canvas.width = innerWidth) * 0.5;
+                    this.centerY = (this.height = this.canvas.height = innerHeight) * 0.5;
+                    return;
+                }
+                this.centerX =
+                    (this.width = this.canvas.width = _w) * 0.5;
+                this.centerY =
+                    (this.height = this.canvas.height = _h) * 0.5;
+            }
+
+            animate(_) {
+                const loop = () => {
+                    this.resetFrame
+                        ? this.ctx.clearRect(0, 0, this.width, this.height)
+                        : undefined;
+                    _();
+                    this.anim = window.requestAnimationFrame(loop);
+                };
+
+                loop();
+            }
+
+        }
+
+        const scene = new Canvas2D({
+            width: innerWidth,
+            height: innerHeight,
+            resetFrame: true
+        }), range = document.getElementById("inp");
+
+        let n = 0,
+            r = 0,
+            c = 6,
+            x = 0, y = 0;
+
+        const loop = function () {
+            n = 0;
+            scene.ctx.lineWidth = 0.5;
+            scene.ctx.lineCap = "round";
+            scene.ctx.lineJoin = "round";
+            scene.ctx.beginPath();
+            scene.animate(() => {
+                scene.ctx.strokeStyle = "rgba(100, 255, 255, 0." + n + ")";
+
+                a = (n * range.value) * Math.PI / 180;
+                r = c * Math.sqrt(n);
+
+                x = r * Math.cos(a) + scene.centerX;
+                y = r * Math.sin(a) + scene.centerY;
+
+                n === 0 ? scene.ctx.moveTo(x, y) : scene.ctx.lineTo(x, y);
+
+                if (n < 1500) n++;
+                scene.ctx.stroke();
+            });
+        };
+
+        loop();
+
+        range.onchange = function () {
+            cancelAnimationFrame(scene.anim);
+            scene.ctx.clearRect(0, 0, scene.width, scene.height);
+            loop();
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particles (chain)</title>
+    <style>
+        canvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #122;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="scene"></canvas>
+
+    <script type="text/javascript">
+        let scene = document.getElementById("scene"),
+            ctx = scene.getContext("2d"),
+            height = scene.height = innerHeight,
+            width = scene.width = innerWidth,
+            h2 = height * 0.5,
+            w2 = width * 0.5,
+            particles = [],
+            particleColor = "#155",
+            strokeColor = "#199",
+            minRadius = 7,
+            minimumParticleSpeed = -2,
+            maximumParticleSpeed = 2,
+            maxRadius = 14,
+            minStrokeWidth = 1,
+            maxStrokeWidth = 2,
+            radius = 3,
+            radiateRadius = 120,
+            mouse = { x: undefined, y: undefined, r: 40 },
+            f, s, r = [];
+
+        const randomInt = (_min, _max) => Math.floor(Math.random() * (_max - _min) + _min);
+
+        const scale = (_value, _inMin, _inMax, _outMin, _outMax) => {
+            return (_value - _inMin) * (_outMax - _outMin) / (_inMax - _inMin) + _outMin;
+        };
+
+        const randomItem = _array => _array[randomInt(_array.length)];
+
+        const clearScreen = () => ctx.clearRect(0, 0, width, height);
+
+        const getDistance = (_1, _2) => {
+            return Math.sqrt((_1.x - _2.x) ** 2 + (_1.y - _2.y) ** 2);
+        }
+
+        const Circle = function (_x, _y, _r) {
+            this.x = _x;
+            this.y = _y;
+            this.r = _r;
+            this._inc = 0;
+            this.vx = randomInt(minimumParticleSpeed, maximumParticleSpeed);
+            this.vy = randomInt(minimumParticleSpeed, maximumParticleSpeed);
+            this.color = particleColor;
+            this.strokeColor = "#199";
+            this.noFill = false;
+            this.marketForDelegation = false;
+
+            this.draw = () => {
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = this.strokeColor;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2, false);
+                ctx.closePath();
+                if (!this.noFill) ctx.fill();
+                ctx.stroke();
+            };
+
+            this.rUpdate = () => {
+                this.draw();
+                this.strokeColor = `rgba(20, 200, 200, ${scale(this.r, 0, radiateRadius, 0.6, 0)})`;
+                this.r++;
+            };
+
+            this.getDistance = () => {
+                return Math.sqrt((this.x - mouse.x) ** 2 + (this.y - mouse.y) ** 2);
+            };
+
+            this.wallCollision = () => {
+                if (this.x - this.r < 0 || this.x + this.r >= width) this.vx = -this.vx;
+                if (this.y - this.r < 0 || this.y + this.r >= height) this.vy = -this.vy;
+            };
+
+            this.mouseCollision = () => {
+                if (getDistance(this, mouse) < this.r + mouse.r * radius) {
+                    this.strokeColor = "#3ff";
+                    return;
+                }
+                this.strokeColor = "#199";
+            }
+
+            this.update = () => {
+                this.draw();
+                this.mouseCollision();
+                this.wallCollision();
+                this.x += this.vx;
+                this.y += this.vy;
+            };
+        };
+
+        const generateParticles = _count => {
+            particles = [];
+            for (let i = 0; i < _count; i++) {
+                particles.push(new Circle(
+                    randomInt(minRadius, width - maxRadius),
+                    randomInt(minRadius, height - maxRadius),
+                    randomInt(minRadius, maxRadius)
+                ));
+            }
+        };
+
+        const init = () => {
+            generateParticles(width / 80 * height / 80);
+            width = scene.width = innerWidth;
+            height = scene.height = innerHeight;
+            h2 = height * 0.5;
+            w2 = width * 0.5;
+        };
+
+        const radiate = () => {
+            for (let i = 0; i < 3; i++) {
+                let circle = new Circle(mouse.x, mouse.y, 1);
+                circle.noFill = true;
+                circle.r *= i * 11;
+                circle.strokeColor = "rgba(20, 130, 130, 0.2)";
+                r.push(circle);
+            }
+        };
+
+        const event = function (_e) {
+            if (_e.type === "touchmove") {
+                mouse.x = _e.touches[0].clientX;
+                mouse.y = _e.touches[0].clientY;
+                return;
+            }
+            mouse.x = _e.clientX;
+            mouse.y = _e.clientY;
+        };
+
+        const event2 = function (_e) {
+            if (_e.type === "touchstart") {
+                mouse.x = _e.touches[0].clientX;
+                mouse.y = _e.touches[0].clientY;
+                radiate();
+                return;
+            }
+            mouse.x = _e.clientX;
+            mouse.y = _e.clientY;
+            radiate();
+        };
+
+        const call = (_, __) => _.forEach(___ => ___[__]());
+
+        const lerp = (_value, _min, _max) => {
+            return _value * (_max - _min) + _min;
+        }
+
+        const connect = () => {
+            for (let i = 0; i < particles.length; i++) {
+                f = particles[i];
+
+                r.forEach(_ => {
+                    if (getDistance(_, f) < f.r + _.r) {
+                        const atan2 = Math.atan2(mouse.y - f.y, mouse.x - f.x);
+                        f.vx = Math.cos(atan2) * -1.5;
+                        f.vy = Math.sin(atan2) * -1.5;
+                    }
+                });
+
+                for (let j = i; j < particles.length; j++) {
+                    s = particles[j];
+
+                    if (getDistance(f, s) < (f.r + s.r) * 4) {
+                        for (let k = 0; k < 1; k += 0.2) {
+                            ctx.strokeStyle = `rgba(20, 150, 150, ${scale(getDistance(f, s), 0, (f.r + s.r) * 4, 1, 0.1)})`;
+                            ctx.lineWidth = scale(getDistance(f, s), 0, (f.r + s.r) * 4, maximumParticleSpeed, minimumParticleSpeed);
+                            ctx.beginPath();
+                            ctx.arc(lerp(k, f.x, s.x), lerp(k, f.y, s.y), 3, 0, Math.PI * 2, false);
+                            ctx.closePath();
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+        };
+
+        const loop = () => {
+            clearScreen();
+
+            connect();
+
+            call(r, "rUpdate");
+
+            r = r.filter(_ => _.r <= radiateRadius);
+
+            call(particles, "update");
+
+            requestAnimationFrame(loop);
+        };
+        loop();
+
+        document.addEventListener("DOMContentLoaded", init);
+        window.addEventListener("resize", init);
+        window.addEventListener("mousemove", event);
+        window.addEventListener("touchmove", event);
+        window.addEventListener("mousedown", event2);
+        window.addEventListener("touchstart", event2);
+    </script>
+</body>
+
+</html>
