@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arc Experiments</title>
+    <style>
+
+        html, body {
+            user-select: none;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            color: #144;
+            flex-direction: column;
+            font-size: 17px;
+            font-family: 'Courier New', Courier, monospace;
+            align-items: center;
+            gap: 10px;
+        }
+
+        canvas {
+            border-radius: 5px;
+            background-color: #144;
+        }
+    </style>
+</head>
+<body>
+    <div>Interact with circle:</div>
+    <div id="circ">Circumference: null</div>
+    <div id="rad">Radius: null</div>
+    <div id="area">Area: null</div>
+    <div id="angle">Angle: null</div>
+    <canvas width="350" height="300" id="canvas">No canvas support, updating your browser might help with this problem.</canvas>
+
+    <script src="./main.js" type="module"></script>
+</body>
+</html>

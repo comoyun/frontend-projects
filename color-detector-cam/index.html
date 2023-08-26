@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Detector</title>
+  <style>
+    :root {
+      --background: #fefefe;
+      --color: #444;
+      --font: arial;
+    }
+
+    *,
+    *::after,
+    *::before {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      background: var(--background);
+      color: var(--color);
+      font-family: Arial, Helvetica, sans-serif;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #canvas {
+      width: 350px;
+      height: 400px;
+      border-radius: 8px;
+      box-shadow: 2px 3px 3px 3px rgba(0, 0, 0, 0.1);
+      border: 2px solid #d9d9d9;
+    }
+
+    .video {
+      display: none;
+      width: 350px;
+      height: 400px;
+    }
+
+    #example {
+      height: 75px;
+      width: 75px;
+      border: 1px solid #d9d9d9;
+      border-radius: 3px;
+    }
+
+    #stats {
+      width: 350px;
+      padding: 1em 1.2em;
+      background: #efefef;
+      border-radius: 3px;
+      border: 1px solid #d9d9d9;
+      font-weight: bold;
+    }
+
+    button {
+      color: #fff;
+      background-color: #099;
+      padding: 1em 1.5em;
+      border-radius: 5px;
+      outline: none;
+      font-weight: bolder;
+      border: none;
+    }
+
+    .hidden {
+      /*visibility: hidden;*/
+      position: absolute;
+      left: -100%;
+    }
+  </style>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+</head>
+
+<body>
+  <p style="font-weight: bold;">Pixel Color:</p>
+  <div id="example">
+  </div>
+  <canvas id="canvas">
+    Canvas NOT supported in your browser
+  </canvas>
+  <div id="stats">
+    <div id="stat">
+    </div>
+    <button class="btn" id="copyrgb" data-cliboard-target="#hiddenr"
+    data-clipboard-action="copy" >Nusxalash RGB</button>
+    <button class="btn" id="copyhex" data-cliboard-target="#hiddenh"
+    data-clipboard-action="copy" >Nusxalash HEX</button>
+  </div>
+  <input class="hidden" type="text" id="hiddenh" value="" />
+  <input class="hidden" type="text" id="hiddenr" value="" />
+  <video class="video" autoplay></video>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js" integrity="sha512-AA1Bzp5Q0K1KanKKmvN/4d3IRKVlv9PYgwFPvm32nPO6QS8yH1HO7LbgB1pgiOxPtfeg5zEn2ba64MUcqJx6CA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script type="text/javascript">
+  
+  
+    var frame,
+      stat = document.getElementById("stat"),
+      video = document.getElementsByClassName("video")[0],
+      pixels = [],
+      hiddenr = document.querySelector("#hiddenr"),
+      hiddenh = document.querySelector("#hiddenh"),
+      example = document.querySelector("#example"),
+      copyh = document.querySelector("#copyhex"),
+      copyr = document.querySelector("#copyrgb"),
+      frame;
+    
+    //clipboard.on("error",(e) => alert(e))
+    
+    swal("Color Detector", "Assalomu Alaykum, Kamerangizni ma'lum bir obyectga qarating, yashil to'rtburchak shakl ichidagi pixellar orqali RGBA, HEX va HSL rang kodlarini olishingiz mumkin. Tez orada saytga yana ham ko'proq funksiya qo'shishga harakat qilaman, Saytning dizayniga oid takliflar bo'lsa bajonidil eshitishga tayyorman!");
+
+    video.width = 350;
+    video.height = 400;
+    canvas.width = 350;
+    canvas.height = 400;
+
+    var ctx = canvas.getContext("2d");
+
+    if ("navigator" in window) {
+      window.navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then(dataObject => {
+        video.srcObject = dataObject;
+      });
+      anim();
+    } else {
+      swal("Cameradan foydalana olmaymiz.");
+    }
+
+    var colorVal = 0,
+      midVal = 0,
+      r,
+      g,
+      b,
+      a;
+    frame = 0;
+
+
+    function rgbaToHEX(r, g, b) {
+      return "#" + r.toString(16) + g.toString(16) + b.toString(16);
+    }
+
+
+    function anim() {
+      frame++;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "cyan";
+      ctx.strokeRect(
+        canvas.width / 2 - 8,
+        canvas.height / 2 - 8,
+        16,
+        16);
+      colorVal = ctx.getImageData(
+        canvas.width / 2,
+        canvas.height / 2,
+        4,
+        4);
+      r = [];
+      g = [];
+      b = [];
+      a = [];
+
+
+      if (frame % 15 === 0) {
+        for (var i = 0; i < colorVal.data.length; i += 4) {
+          r.push(colorVal.data[i]);
+          g.push(colorVal.data[i + 1]);
+          b.push(colorVal.data[i + 2]);
+          a.push(colorVal.data[i + 3]);
+        }
+
+        r = Math.floor(r.reduce((acc, next) => acc + next, 0) / r.length);
+        g = Math.floor(g.reduce((acc, next) => acc + next, 0) / g.length);
+        b = Math.floor(b.reduce((acc, next) => acc + next, 0) / b.length);
+        a = Math.floor(a.reduce((acc, next) => acc + next, 0) / a.length);
+        stat.innerHTML = `
+        <b>RGB</b>: <code>rgba(${r}, ${g}, ${b}, ${a})</code><br>
+        <b>HEX</b>: <code>${rgbaToHEX(r, g, b)}</code><br><br>
+        `;
+        hiddenh.value = rgbaToHEX(r, g, b);
+        hiddenr.value = "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
+
+        example.style.backgroundColor = hiddenr.value;
+      }
+      requestAnimationFrame(anim);
+    }
+
+    copyh.onclick = function() {
+      hiddenh.select();
+      document.execCommand("copy");
+      Toastify({
+        text: "Kod muvaffaqiyatli nusxalandi!",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        stopOnFocus: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        }
+      }).showToast();
+    };
+
+    copyr.onclick = function() {
+      hiddenr.select();
+      document.execCommand("copy");
+      Toastify({
+        text: "Kod muvaffaqiyatli nusxalandi!",
+        duration: 3000,
+        gravity: "top",
+        position: "left",
+        stopOnFocus: true,
+        style: {
+          background: "linear-gradient(to right, #00b09b, #96c93d)",
+        }
+      }).showToast();
+    }
+  </script>
+</body>
+
+</html>

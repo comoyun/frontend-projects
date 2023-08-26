@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Composite Operation</title>
+    <style type="text/css">
+        *,
+        *::after,
+        *::before {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #133;
+        }
+
+        #select {
+            width: 100px;
+            height: auto;
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <select id="select"></select>
+
+    <script type="text/javascript">
+        const select = document.getElementById("select"),
+            options = [
+                "color",
+                "color-burn",
+                "color-dodge",
+                "copy",
+                "darken",
+                "destination-atop",
+                "destination-in",
+                "destination-out",
+                "destination-over",
+                "difference",
+                "exclusion",
+                "hue",
+                "hard-light",
+                "lighten",
+                "multiply",
+                "luminosity",
+                "overlay",
+                "saturation",
+                "screen",
+                "soft-light",
+                "source-atop",
+                "source-in",
+                "source-out",
+                "source-over",
+                "xor",
+            ], colors = [
+                "#166",
+                "#1aa",
+                "#199",
+                "#188",
+                "#177",
+            ];
+
+        let s = false,
+            ds = undefined;
+
+        options.forEach(_ => {
+            const option = document.createElement("option");
+            option.setAttribute("value", _);
+            option.innerText = _;
+
+            select.appendChild(option);
+        });
+
+        class Canvas2D {
+            constructor({
+                width = 200,
+                height = 250,
+                parent = document.body,
+                resetFrame = false
+            }) {
+                window.requestAnimationFrame =
+                    window.requestAnimationFrame ||
+                    window.oRequestAnimationFrame ||
+                    window.mozRequestAnimationFrame ||
+                    window.webkitRequestAnimationFrame;
+
+                this.Keyboard = {
+                    active: false,
+                    key: "",
+                    arrows: {
+                        left: false,
+                        right: false,
+                        down: false,
+                        up: false,
+                    },
+                    event(_e) {
+                        switch (_e.type) {
+                            case "keydown":
+                                // special keys
+                                if (_e.key == "ArrowLeft") this.arrows.left = true;
+                                if (_e.key == "ArrowRight") this.arrows.right = true;
+                                if (_e.key == "ArrowDown") this.arrows.down = true;
+                                if (_e.key == "ArrowUp") this.arrows.up = true;
+
+                                this.active = true;
+                                this.key = _e.key;
+
+                                break;
+
+                            case "keyup":
+                                if (_e.key == "ArrowLeft") this.arrows.left = false;
+                                if (_e.key == "ArrowRight") this.arrows.right = false;
+                                if (_e.key == "ArrowDown") this.arrows.down = false;
+                                if (_e.key == "ArrowUp") this.arrows.up = false;
+
+                                this.active = false;
+                                this.key = "";
+
+                                break;
+                        }
+                    },
+
+                    resetArrowKeys() {
+                        this.arrows.left = false;
+                        this.arrows.right = false;
+                        this.arrows.down = false;
+                        this.arrows.up = false;
+                    },
+                };
+
+                let canvas = (this.canvas = document.createElement("canvas"));
+                this.ctx = this.canvas.getContext("2d");
+                this.resetFrame = resetFrame;
+                this.setSize(width || true, height);
+
+                this.Mouse = {
+                    active: false,
+                    x: undefined,
+                    y: undefined,
+                    fx: undefined,
+                    fy: undefined,
+                    event: (_e) => {
+                        switch (_e.type) {
+                            case "touchstart":
+                                this.Mouse.x = _e.touches[0].clientX;
+                                this.Mouse.y = _e.touches[0].clientY;
+                                this.Mouse.fx = this.Mouse.x;
+                                this.Mouse.fy = this.Mouse.y;
+
+                                this.Mouse.active = true;
+                                break;
+                            case "touchmove":
+                                this.Mouse.x = _e.touches[0].clientX;
+                                this.Mouse.y = _e.touches[0].clientY;
+                                break;
+                            case "touchend":
+                                this.Mouse.active = false;
+                                break;
+                            case "mousedown":
+                                this.Mouse.x = _e.clientX;
+                                this.Mouse.y = _e.clientY;
+                                this.Mouse.fx = this.Mouse.x;
+                                this.Mouse.fy = this.Mouse.y;
+
+                                this.Mouse.active = true;
+                                break;
+                            case "mousemove":
+                                this.Mouse.x = _e.clientX;
+                                this.Mouse.y = _e.clientY;
+                                break;
+                            case "mouseup":
+                                this.Mouse.active = false;
+                                break;
+                        }
+                        this.Mouse.x -= canvas.getBoundingClientRect().left;
+                        this.Mouse.y -= canvas.getBoundingClientRect().top;
+                    },
+                };
+
+                parent.appendChild(this.canvas);
+
+                window.addEventListener("keydown", this.Keyboard.event);
+                window.addEventListener("keyup", this.Keyboard.event);
+                this.canvas.addEventListener("touchstart", this.Mouse.event);
+                this.canvas.addEventListener("mousedown", this.Mouse.event);
+                this.canvas.addEventListener("touchend", this.Mouse.event);
+                this.canvas.addEventListener("mouseup", this.Mouse.event);
+                this.canvas.addEventListener("mousemove", this.Mouse.event);
+                this.canvas.addEventListener("touchmove", this.Mouse.event);
+            }
+
+            setSize(_w, _h) {
+                if (!_w === true) {
+                    this.centerX = (this.width = this.canvas.width = innerWidth) * 0.5;
+                    this.centerY = (this.height = this.canvas.height = innerHeight) * 0.5;
+                    return;
+                }
+                this.centerX =
+                    (this.width = this.canvas.width = _w) * 0.5;
+                this.centerY =
+                    (this.height = this.canvas.height = _h) * 0.5;
+            }
+
+            animate(_) {
+                const loop = () => {
+                    this.resetFrame
+                        ? this.ctx.clearRect(0, 0, this.width, this.height)
+                        : undefined;
+                    _();
+                    window.requestAnimationFrame(loop);
+                };
+
+                loop();
+            }
+        }
+
+        const cage = new Canvas2D({
+            width: innerWidth,
+            height: innerHeight,
+            parent: document.body,
+            resetFrame: false
+        });
+
+        const distance = (_o1, _o2) => {
+            return Math.sqrt(
+                Math.pow(_o1.x - _o2.x, 2) + Math.pow(_o1.y - _o2.y, 2)
+            );
+        };
+
+        cage.animate(() => {
+            // Global Composite Operation
+            cage.ctx.globalCompositeOperation = select.value;
+
+            if (cage.Mouse.active) {
+                cage.ctx.fillStyle = randomColor();
+                cage.ctx.beginPath();
+                cage.ctx.arc(cage.Mouse.x, cage.Mouse.y, 20, 0, Math.PI * 2, true);
+                cage.ctx.closePath();
+                cage.ctx.fill();
+            }
+        });
+
+        function randomColor() {
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+    </script>
+</body>
+
+</html>

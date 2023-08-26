@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rectangle Collision</title>
+        <style type="text/css">
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            html,
+            body {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                align-items: center;
+                flex-direction: column;
+            }
+
+            canvas {
+                background-color: #144;
+                width: 400px;
+                height: 300px;
+                border: 2px solid #144;
+                border-radius: 8px;
+            }
+
+            b {
+                width: 400px;
+            }
+
+            kbd {
+                background-color: #144;
+                border-radius: 3px;
+                padding: 0.15em;
+                color: #fefefe;
+                user-select: all;
+            }
+        </style>
+    </head>
+    <body>
+        <br />
+        <b
+            >Buttons on canvas.
+            Has only a few events. Open up the console and type
+            <kbd
+                >createButton("My button", 20, canvas.height / 2, () =>
+                console.log("Clicked"))</kbd
+            > to add a button.
+        </b>
+        <canvas id="canvas" width="350" height="300"
+            >Canvas isn't supported on this browser, please update it.</canvas
+        >
+
+        <script src="./Button.js"></script>
+        <script type="text/javascript">
+            var canvas = document.getElementById("canvas"),
+                ctx = canvas.getContext("2d"),
+                btn = new Button({
+                    canvas,
+                    ctx,
+                    text: "Go Fullscreen",
+                    fontSize: 18,
+                    color: "white",
+                    borderColor: "white",
+                    width: 180,
+                    height: 50,
+                    borderWidth: 2,
+                }),
+                btn2 = new Button({
+                    canvas,
+                    ctx,
+                    x: btn.getRight() + 10,
+                    text: "Exit Fullscreen",
+                    fontSize: 18,
+                    color: "white",
+                    borderColor: "white",
+                    width: 180,
+                    height: 50,
+                    borderWidth: 2,
+                }),
+                btn3 = new Button({
+                    canvas,
+                    ctx,
+                    y: btn.getBottom() + 10,
+                    text: "Button 3",
+                    fontSize: 18, 
+                    color: "white",
+                    borderColor: "white",
+                    width: 180,
+                    height: 50,
+                    borderWidth: 2,
+                }),
+                btn4 = new Button({
+                    canvas,
+                    ctx,
+                    y: btn.getBottom() + 10,
+                    x: btn3.getRight() + 10,
+                    text: "Button 4",
+                    fontSize: 18,
+                    color: "white",
+                    borderColor: "white",
+                    width: 180,
+                    height: 50,
+                    borderWidth: 2,
+                }),
+                btns = [];
+
+            canvas.width = 400;
+            canvas.height = 300;
+
+            function getRandomColor(_ = "#") {
+                if (_.length > 6) return;
+
+                let h = Array.from("abcdef0123456789");
+                _ += h[Math.floor(Math.random() * h.length)];
+
+                return getRandomColor(_) + _;
+            }
+
+            btn.init();
+
+            btn.onDblClick(() => console.log("Double Click"));
+            btn.onClick(() => {
+                btn.color = getRandomColor().substr(9, 7);
+                btn.backgroundColor = getRandomColor().substr(9, 7);
+                btn.borderWidth = 0;
+                try {
+                    document.documentElement.requestFullscreen();
+                } catch (_err) {
+                    alert("Page's already in fullscreen mode");
+                }
+            });
+
+            btn2.init();
+
+            btn2.onDblClick(() => console.log("Double Click"));
+            btn2.onClick(() => {
+                btn2.color = getRandomColor().substr(9, 7);
+                btn2.backgroundColor = getRandomColor().substr(9, 7);
+                btn2.borderWidth = 0;
+                    document.exitFullscreen().catch(_ => alert("Page's not in fullscreen mode"));
+
+            });
+
+            btn3.init();
+
+            btn3.onDblClick(() => console.log("Double Click"));
+            btn3.onClick(() => {
+                btn3.color = getRandomColor().substr(9, 7);
+                btn3.backgroundColor = getRandomColor().substr(9, 7);
+                btn3.borderWidth = 0;
+            });
+
+            btn4.init();
+
+            btn4.onDblClick(() => console.log("Double Click"));
+            btn4.onClick(() => {
+                btn4.color = getRandomColor().substr(9, 7);
+                btn4.backgroundColor = getRandomColor().substr(9, 7);
+                btn4.borderWidth = 0;
+            });
+
+            btns = [btn, btn2, btn3, btn4];
+
+            animate();
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                btns.forEach(_btn => {
+                    _btn.place();
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            function createButton(_text, _x, _y, _clickFunc) {
+                let btn5 = new Button({
+                    canvas,
+                    ctx,
+                    y: _y,
+                    x: _x,
+                    text: _text,
+                    fontSize: 18,
+                    color: "white",
+                    borderColor: "white",
+                    width: 180,
+                    height: 50,
+                    borderWidth: 2,
+                });
+
+                btn5.init();
+
+                btn5.onClick(_clickFunc);
+
+                btns.push(btn5);
+            }
+        </script>
+    </body>
+</html>

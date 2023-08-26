@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Image</title>
+    <style type="text/css">
+        *,
+        *::after,
+        *::before {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background-color: #133;
+        }
+
+
+        #scene {
+            background-color: #fefefe;
+            border-radius: 8px;
+        }
+
+        #input, #fonts {
+            border: none;
+            outline: none;
+            margin-top: 20px;
+            border-radius: 3px;
+            padding: .8em 1.2em;
+            width: 300px;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <canvas id="scene">
+        No canvas support, please update your browser....
+    </canvas>
+
+
+    <select id="fonts">
+        <option value="monospace">Monospace</option>
+        <option value="arial">Arial</option>
+        <option value="Verdana">Verdana</option>
+        <option value="cursive">Cursive</option>
+        <option value="times">Times</option>
+        <option value="fantasy">Fantasy</option>
+        <option value="sans-serif">sans-serif</option>
+    </select>
+
+    <input type="text" placeholder="Type text here..." id="input">
+
+    <script type="text/javascript">
+        let canvas = document.getElementById("scene"),
+            ctx = canvas.getContext("2d"),
+            text = "",
+            input = document.getElementById("input"),
+            fonts = document.getElementById("fonts"),
+            fontSize = 55;
+
+        canvas.width = 300;
+
+        input.onkeydown = function () {
+            setTimeout(() => {
+                text = input.value
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = fontSize + "px normal, " + fonts.value;
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#133";
+                ctx.fillText(text, canvas.width / 2, canvas.height / 2 + fontSize * 0.3, 300);
+            }, 0);
+        }
+
+        fonts.onchange = function () {
+            text = input.value
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = fontSize + "px normal, " + fonts.value;
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#133";
+            ctx.strokeText(text, canvas.width / 2, canvas.height / 2 + fontSize * 0.3, 300);
+        }
+
+    </script>
+</body>
+
+</html>

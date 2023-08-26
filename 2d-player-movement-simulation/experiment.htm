@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title>an Experiment with rectangles.</title>
+
+        <style type="text/css">
+            *,
+            *::after,
+            *::before {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            input,
+            button,
+            select,
+            details {
+                outline: none;
+                user-select: none;
+                -moz-user-select: none;
+                -webkit-user-select: none;
+            }
+
+            html,
+            body {
+                width: 100%;
+                height: 100vh;
+                overflow: hidden;
+                overscroll-behavior: contain;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                /*background-color: #144;*/
+            }
+
+            canvas {
+                background-color: #144;
+                border: 2px solid #133;
+                transform: scale(1.1) rotate(20deg) skewX(-10deg);
+            }
+        </style>
+    </head>
+
+    <body>
+        <script type="text/javascript">
+            class Game {
+                static Mouse = {
+                    x: undefined,
+                    y: undefined,
+                    active: false,
+
+                    /* for ontouchstart event */
+                    setMobile(_) {
+                        this.active = true;
+                        this.x = _.touches[0].clientX;
+                        this.y = _.touches[0].clientY;
+                    },
+
+                    /* for onmousedown event */
+                    setDesktop(_) {
+                        this.active = true;
+                        this.x = _.clientX;
+                        this.y = _.clientY;
+                    },
+
+                    setMobileMove(_) {
+                        this.x = _.touches[0].clientX;
+                        this.y = _.touches[0].clientY;
+                    },
+
+                    /* for onmousedown event */
+                    setDesktopMove(_) {
+                        this.x = _.clientX;
+                        this.y = _.clientY;
+                    },
+
+                    disable() {
+                        this.active = false;
+                    },
+
+                    /*
+    initial:
+      {
+        sx: 0,
+        sy: 0,
+        w: 100,
+        h: 100,
+        active: false
+      }
+    */
+                    setButtons(_eq) {
+                        _eq.map(_ => {
+                            if (
+                                !(
+                                    this.x <= _.sx ||
+                                    this.x >= _.sx + _.w ||
+                                    this.y <= _.sy ||
+                                    this.y >= _.sy + _.h
+                                )
+                            ) {
+                                return (_.active = true && _);
+                            }
+                            return (_.active = false && _);
+                        });
+                    },
+                };
+
+                static Keyboard = {
+                    active: false,
+                    shift: false,
+                    space: false,
+                    key: "",
+                    arrows: {
+                        left: false,
+                        right: false,
+                        up: false,
+                        down: false,
+                    },
+
+                    /* onkeydown event */
+                    event(_) {
+                        if (_.key == "ArrowLeft") this.arrows.left = true;
+                        if (_.key == "ArrowRight") this.arrows.right = true;
+                        if (_.key == "ArrowDown") this.arrows.down = true;
+                        if (_.key == "ArrowUp") this.arrows.up = true;
+                        if (_.key == "Shift") this.shift = true;
+                        if (_.keyCode == 32) this.space = true;
+
+                        this.active = true;
+                        this.arrows.key = _.key;
+                    },
+
+                    keyUpEvent(_) {
+                        if (_.key == "ArrowLeft") this.arrows.left = false;
+                        if (_.key == "ArrowRight") this.arrows.right = false;
+                        if (_.key == "ArrowDown") this.arrows.down = false;
+                        if (_.key == "ArrowUp") this.arrows.up = false;
+                        if (_.key == "Shift") this.shift = false;
+                        if (_.keyCode == 32) this.space = false;
+                    },
+
+                    reset() {
+                        this.arrows.left = false;
+                        this.arrows.right = false;
+                        this.arrows.down = false;
+                        this.arrows.up = false;
+                    },
+                };
+
+                static CreateCanvas = () => {
+                    let c = document.createElement("canvas"),
+                        ctx = c.getContext("2d");
+
+                    return { c, ctx };
+                };
+
+                static GetDistance = (_o1, _o2) => {
+                    return Math.sqrt(
+                        Math.pow(_o1.x - _o2.x, 2) + Math.pow(_o1.y - _o2.y, 2)
+                    );
+                };
+
+                static Collide = (_o1, _o2) => {
+                    if (
+                        !(
+                            _o1.x <= _o2.x ||
+                            _o1.x >= _o2.x + _o2.w ||
+                            _o1.y <= _o2.y ||
+                            _o1.y >= _o2.y + _o2.h
+                        )
+                    ) {
+                        return true;
+                    }
+                    return false;
+                };
+
+                static getRandomInt(_min, _max) {
+                    return Math.floor(Math.random() * (_max - _min) + _min);
+                }
+
+                static getRandom(_min, _max) {
+                    return Math.random() * (_max - _min) + _min;
+                }
+
+                static rgba(_r, _g, _b, _a = 1) {
+                    return `rgb(${_r}, ${_g}, ${_b}, ${_a})`;
+                }
+
+                constructor() {
+                    this.AIs = [];
+                    this.bestAI = null;
+                    this.jumpDistance = -10;
+                    this.playAgain = [];
+                    this.fire = [];
+
+                    this.WORLD = {
+                        ctx: null,
+                        node: null,
+                        dimensions: {
+                            w: 250,
+                            h: 250,
+                        },
+                        incrementors: {
+                            score: 0,
+                            coin: 0,
+                            bullet: 0,
+                            attempts: 0,
+                            max_health: 100,
+                            min_health: 0,
+                            fps: 1000 / 60,
+                            animationCtx:
+                                window.requestAnimationFrame ||
+                                window.webkitRequestAnimationFrame ||
+                                window.mozRequestAnimationFrame ||
+                                window.oRequestAnimationFrame,
+                        },
+                        startPoint: Date.now(),
+                        endPoint: null,
+                        end: false,
+                    };
+                }
+
+                initialize(_) {
+                    let a = Game.CreateCanvas();
+                    a.c.width = this.WORLD.dimensions.w;
+                    a.c.height = this.WORLD.dimensions.h;
+                    this.WORLD.ctx = a.ctx;
+                    this.WORLD.node = a.c;
+                    _.appendChild(a.c);
+                }
+
+                setDimensions(_w, _h) {
+                    this.WORLD.dimensions.w = _w;
+                    this.WORLD.dimensions.h = _h;
+                    this.update();
+                }
+
+                clear() {
+                    this.WORLD.ctx.clearRect(
+                        0,
+                        0,
+                        this.WORLD.dimensions.w,
+                        this.WORLD.dimensions.h
+                    );
+                }
+
+                setColor(_) {
+                    this.WORLD.ctx.fillStyle = _;
+                    this.WORLD.ctx.fillRect(
+                        0,
+                        0,
+                        this.WORLD.dimensions.w,
+                        this.WORLD.dimensions.h
+                    );
+                }
+
+                update() {
+                    (this.WORLD.node.width = this.WORLD.dimensions.w),
+                        (this.WORLD.node.height = this.WORLD.dimensions.h);
+                }
+
+                rgbaClear(_r, _g, _b, _a) {
+                    this.WORLD.ctx.fillStyle = `rgba(${_r}, ${_g}, ${_b}, ${_a})`;
+                    this.WORLD.ctx.fillRect(
+                        0,
+                        0,
+                        this.WORLD.dimensions.w,
+                        this.WORLD.dimensions.h
+                    );
+                }
+
+                /* resizing refreshes the page */
+                onResize() {
+                    window.location.reload();
+                }
+            }
+            class FillRect {
+                constructor(
+                    _ = {
+                        x: undefined,
+                        y: undefined,
+                        w: 10,
+                        h: 10,
+                        fill: "black",
+                    }
+                ) {
+                    this.groundY = 0;
+                    this.pos = {
+                        x: _.x,
+                        y: _.y,
+                    };
+                    this.dim = {
+                        w: _.w,
+                        h: _.h,
+                    };
+                    this.velocity = {
+                        x: 0,
+                        y: 0,
+                        gravity: 0.2,
+                        xfriction: 0.05,
+                        yfriction: 0.25,
+                    };
+                    this.speeding = false;
+                    this.rotation = 0;
+                    this.fill = _.fill;
+
+                    this.isAI = false;
+                    this.ai = {
+                        datas: {
+                            /* Data learned */
+                        },
+                    };
+                }
+
+                draw(_) {
+                    if (this.speeding) {
+                        _.strokeStyle = "gold";
+                        _.lineWidth = 3;
+                        _.strokeRect(
+                            this.pos.x - 3,
+                            this.pos.y - 3,
+                            this.dim.w + 3,
+                            this.dim.h + 3
+                        );
+                        if (!this.onGround()) {
+                            _.strokeStyle = "gold";
+                            _.lineWidth = 7;
+                            _.beginPath();
+
+                            if (
+                                this.velocity.x > 0 &&
+                                this.velocity.y < this.velocity.yfriction
+                            ) {
+                                _.moveTo(this.pos.x, this.pos.y + this.dim.h);
+                                _.lineTo(
+                                    this.pos.x - 10,
+                                    this.pos.y + this.dim.h + 20
+                                );
+                                _.closePath();
+                                _.stroke();
+                                _.moveTo(
+                                    this.pos.x + this.dim.w,
+                                    this.pos.y + this.dim.h
+                                );
+                                _.lineTo(
+                                    this.pos.x + this.dim.w - 10,
+                                    this.pos.y + this.dim.h + 20
+                                );
+                            } else {
+                                if (this.velocity.x > 0) {
+                                    _.moveTo(this.pos.x, this.pos.y);
+                                    _.lineTo(this.pos.x - 10, this.pos.y - 20);
+                                    _.closePath();
+                                    _.stroke();
+                                    _.moveTo(
+                                        this.pos.x + this.dim.w,
+                                        this.pos.y
+                                    );
+                                    _.lineTo(
+                                        this.pos.x + this.dim.w - 10,
+                                        this.pos.y - 20
+                                    );
+                                } else {
+                                    if (
+                                        this.velocity.y <
+                                        this.velocity.yfriction
+                                    ) {
+                                        _.moveTo(
+                                            this.pos.x,
+                                            this.pos.y + this.dim.h
+                                        );
+                                        _.lineTo(
+                                            this.pos.x + 10,
+                                            this.pos.y + this.dim.h + 20
+                                        );
+                                        _.closePath();
+                                        _.stroke();
+                                        _.moveTo(
+                                            this.pos.x + this.dim.w,
+                                            this.pos.y + this.dim.h
+                                        );
+                                        _.lineTo(
+                                            this.pos.x + this.dim.w + 10,
+                                            this.pos.y + this.dim.h + 20
+                                        );
+                                    } else {
+                                        _.moveTo(this.pos.x, this.pos.y);
+                                        _.lineTo(
+                                            this.pos.x + 10,
+                                            this.pos.y - 20
+                                        );
+                                        _.closePath();
+                                        _.stroke();
+                                        _.moveTo(
+                                            this.pos.x + this.dim.w,
+                                            this.pos.y
+                                        );
+                                        _.lineTo(
+                                            this.pos.x + this.dim.w + 10,
+                                            this.pos.y - 20
+                                        );
+                                    }
+                                }
+                            }
+
+                            _.closePath();
+                            _.stroke();
+                        }
+                    }
+                    _.fillStyle = this.fill;
+                    _.fillRect(this.pos.x, this.pos.y, this.dim.w, this.dim.h);
+                }
+
+                setDim(_w, _h) {
+                    this.dim.w = _w;
+                    this.dim.h = _h;
+                }
+
+                setPos(_x, _y) {
+                    this.pos.x = _x;
+                    this.pos.y = _y;
+                }
+
+                rotateRight() {
+                    this.rotation += 0.1;
+                }
+
+                setGround(_obj, _offsetX) {
+                    this.pos.y = _obj.pos.y - this.dim.h - 150;
+                    this.pos.x = _offsetX || 20;
+                    this.groundY = _obj.pos.y - this.dim.h;
+                }
+
+                collideGround() {
+                    return this.pos.y + this.dim.h >= this.groundY;
+                }
+
+                onGround() {
+                    return this.pos.y == this.groundY;
+                }
+
+                isStill() {
+                    return this.velocity.x + this.velocity.y == 0;
+                }
+
+                getCenter() {
+                    return this.pos.x + this.dim.w * 0.5;
+                }
+
+                isStillX() {
+                    return this.velocity.x == 0;
+                }
+            }
+            class Arc {
+                constructor(
+                    _ = {
+                        x: undefined,
+                        y: undefined,
+                        r: 10,
+                        fill: "black",
+                        red: 0,
+                        green: 0,
+                        blue: 0,
+                    }
+                ) {
+                    this.pos = {
+                        x: _.x,
+                        y: _.y,
+                    };
+                    this.red = _.red;
+                    this.green = _.green;
+                    this.blue = _.blue;
+                    this.r = _.r;
+                    this.rotation = 0;
+                    this.fill = _.fill;
+                    this.velocity = {
+                        x: 2,
+                        y: 2,
+                        gravity: 0.2,
+                        friction: 0.8,
+                    };
+                    this.opacity = 1;
+                    this.isAI = false;
+                    this.ai = {
+                        datas: {
+                            /* Data learned */
+                        },
+                    };
+                }
+
+                draw(_) {
+                    _.fillStyle =
+                        this.fill ||
+                        Game.rgba(
+                            this.red,
+                            this.green,
+                            this.blue,
+                            this.opacity
+                        );
+                    _.beginPath();
+                    _.arc(
+                        this.pos.x,
+                        this.pos.y,
+                        this.r,
+                        0,
+                        Math.PI * 2,
+                        false
+                    );
+                    _.closePath();
+                    _.fill();
+                }
+
+                updatePlayAgain(_) {
+                    this.draw(_);
+                    this.pos.x += this.velocity.x;
+                    this.pos.y += this.velocity.y;
+                    this.opacity -= 0.01;
+                }
+
+                setPos(_x, _y) {
+                    this.pos.x = _x;
+                    this.pos.y = _y;
+                }
+            }
+
+            const game = new Game();
+
+            game.initialize(document.body);
+
+            game.setDimensions(400, 350);
+
+            const ctx = game.WORLD.ctx,
+                node = game.WORLD.node;
+
+            node.style.backgroundColor = "#efefef";
+            node.style.border = "3px solid #144";
+            node.style.borderRadius = "8px";
+
+            let player = new FillRect({
+                    w: 35,
+                    h: 50,
+                    fill: "#144",
+                }),
+                ground = new FillRect({
+                    x: 0,
+                    y: node.height - 40,
+                    h: 40,
+                    w: node.width,
+                    fill: "#122",
+                });
+
+            player.setGround(ground, 30);
+
+            if (navigator.userAgent.match(/Android/i)) {
+                alert(
+                    "Looks like you are using a cell phone. Unfortunately, this game doesn't support mobile devices :("
+                );
+            }
+
+            function playAgain(_o, _n) {
+                game.playAgain = [];
+
+                for (let i = 0; i < _n; i++) {
+                    const firework = new Arc({
+                        x: _o.getCenter() + Game.getRandomInt(-15, 15),
+                        y: _o.pos.y + Game.getRandomInt(-15, 15),
+                        r: 2,
+                        red: 150,
+                        green: 150,
+                        blue: 0,
+                        opacity: 1,
+                    });
+                    firework.velocity.x = Game.getRandom(-1.5, 1.5);
+                    firework.velocity.y = Game.getRandom(-1.5, 1.5);
+
+                    game.playAgain.push(firework);
+                }
+            }
+
+            function fire(_o, _n) {
+                for (let i = 0; i < _n; i++) {
+                    const firework = new Arc({
+                        x: _o.getCenter() + Game.getRandomInt(-5, 5),
+                        y: _o.pos.y + Game.getRandomInt(-5, 5),
+                        r: 2,
+                        fill: "#166",
+                        opacity: 1,
+                    });
+                    firework.velocity.x = Game.getRandom(-0.5, 0.5);
+                    firework.velocity.y = Game.getRandom(-0.5, 0.5);
+
+                    game.fire.push(firework);
+                }
+            }
+
+            function playerLogic() {
+                player.pos.x += player.velocity.x;
+                player.pos.y += player.velocity.y;
+
+                // MOVEMENT
+                if (Game.Keyboard.arrows.right) {
+                    player.velocity.x = 2;
+                } else if (player.velocity.x > 0) {
+                    player.velocity.x -= player.velocity.xfriction;
+
+                    if (player.velocity.x < player.velocity.xfriction) {
+                        player.velocity.x = 0;
+                    }
+                }
+
+                if (Game.Keyboard.arrows.left) {
+                    player.velocity.x = -2;
+                } else if (player.velocity.x < 0) {
+                    player.velocity.x += player.velocity.xfriction;
+
+                    if (player.velocity.x > player.velocity.xfriction) {
+                        player.velocity.x = 0;
+                    }
+                }
+
+                if (
+                    (Game.Keyboard.arrows.up || Game.Keyboard.space) &&
+                    player.onGround()
+                ) {
+                    player.velocity.y = game.jumpDistance;
+                } else if (!player.onGround()) {
+                    player.velocity.y += player.velocity.yfriction;
+
+                    if (player.pos.y + player.dim.h >= ground.pos.y) {
+                        player.pos.y = player.groundY;
+                        player.velocity.y = 0;
+                    }
+                }
+
+                if (Game.Keyboard.arrows.down && !player.onGround()) {
+                    player.velocity.y = 15;
+                    fire(player, 20);
+                }
+
+                if (Game.Keyboard.shift && !player.isStillX()) {
+                    player.speeding = true;
+                    player.velocity.x > 0
+                        ? (player.velocity.x = 4)
+                        : (player.velocity.x = -4);
+                } else {
+                    player.speeding = false;
+                }
+
+                if (player.pos.x - player.velocity.x > node.width) {
+                    player.pos.x = -player.dim.w;
+                }
+
+                if (player.pos.x + player.dim.w + player.velocity.x < 0) {
+                    player.pos.x = node.width;
+                }
+            }
+
+            animate();
+
+            function animate() {
+                let frame = requestAnimationFrame(animate);
+                game.rgbaClear(190, 220, 220, 0.2);
+
+                ground.draw(ctx);
+                player.draw(ctx);
+                game.fire.forEach(_e => _e.updatePlayAgain(ctx));
+                game.fire.forEach(
+                    (_e, _i) => _e.opacity > 0 || game.fire.splice(_i, 1)
+                );
+
+                playerLogic();
+
+                ctx.font = "10px Arial bold";
+                ctx.fillText(
+                    `
+        "Space" - Jump, "ArrowRight" - Move Right, "ArrowLeft" - Move Left,
+    `,
+                    -20,
+                    10
+                );
+                ctx.fillText(
+                    `
+    "ArrowDown" - Move Down, "ArrowUp" - Jump, "Shift" - Boost Speed`,
+                    -10,
+                    22
+                );
+                ctx.fillText(`SMash Proto, Humoyun 2022.`, 2, 34);
+                ctx.fillText(JSON.stringify(player.velocity), 0, 46);
+
+                if (game.WORLD.end) cancelAnimationFrame(frame);
+            }
+
+            window.addEventListener("keydown", _e => Game.Keyboard.event(_e));
+            window.addEventListener("keyup", _e =>
+                Game.Keyboard.keyUpEvent(_e)
+            );
+            window.addEventListener("touchstart", _e =>
+                Game.Mouse.setMobile(_e)
+            );
+            window.addEventListener("mousedown", _e =>
+                Game.Mouse.setDesktop(_e)
+            );
+            window.addEventListener("touchend", _e => Game.Mouse.disable());
+            window.addEventListener("mouseup", _e => Game.Mouse.disable());
+            window.addEventListener("touchmove", _e =>
+                Game.Mouse.setMobileMove(_e)
+            );
+            window.addEventListener("mousemove", _e =>
+                Game.Mouse.setDesktopMove(_e)
+            );
+            window.addEventListener("resize", Game.onResize);
+            window.addEventListener("contextmenu", _e => _e.preventDefault());
+
+            /*
+            game.rgbaClear(230, 230, 230, 0.1);
+
+            ground.draw(ctx);
+            player.draw(ctx);
+            player.pos.x += player.velocity.x;
+            player.pos.y -= player.velocity.y;
+
+            if (Game.Keyboard.arrows.right) {
+                player.velocity.x = 2;
+            } else {
+                player.velocity.x -= player.velocity.xfriction;
+                if (player.velocity.x < player.velocity.xfriction) {
+                    player.velocity.x = 0;
+                }
+            }
+
+            if (
+                (Game.Keyboard.arrows.up || Game.Keyboard.space) &&
+                player.pos.y == ground.pos.y - player.dim.h
+            ) {
+                player.fill = rgb(
+                    Game.getRandomInt(0, 155),
+                    Game.getRandomInt(0, 155),
+                    Game.getRandomInt(0, 155)
+                );
+
+                player.velocity.y += 6;
+            } else {
+                if (player.pos.y + player.dim.h < ground.pos.y) {
+                    player.velocity.y -= player.velocity.gravity;
+                } else {
+                    player.velocity.y = 0;
+                    player.pos.y = ground.pos.y - player.dim.h;
+                }
+            }
+
+            if (player.pos.x + player.dim.w < 0) {
+                player.pos.x = game.WORLD.dimensions.w;
+            }
+
+            if (player.pos.x > game.WORLD.dimensions.w) {
+                player.pos.x = -player.dim.w;
+            }
+
+            if (Game.Keyboard.arrows.left) {
+                player.velocity.x = -2;
+            }
+
+            if (Game.Keyboard.shift && player.velocity.x != 0) {
+                player.velocity.x = player.velocity.x < 0 ? -8 : 8;
+            }
+        */
+
+            // SMash Proto, Humoyun 2022
+        </script>
+    </body>
+</html>

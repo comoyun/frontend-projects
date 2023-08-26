@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rect (car physics)</title>
+        <style type="text/css">
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            canvas {
+                background-color: #177;
+                margin-top: 10px;
+                border-radius: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <p>I know it sucks...</p>
+        <canvas width="350" height="350" id="canvas">No Canvas Support</canvas>
+
+        <script type="text/javascript">
+            let canvas = document.getElementById("canvas"),
+                ctx = canvas.getContext("2d"),
+                cars = [];
+
+            const Rect = function (_x = 10, _y = 10) {
+                this.x = _x;
+                this.y = _y;
+                this.width = 100;
+                this.height = 150;
+                this.color = "#144";
+                this.movingDown = false;
+                this.movingLeft = false;
+                this.movingUp = false;
+                this.movingRight = false;
+                this.initialVX = 1.2;
+                this.initialVY = 1.2;
+                this.rotation = 0;
+                this.vx = 2;
+                this.vy = 0;
+                this.maxSpeed = 5;
+                this.frictionX = 0.03;
+                this.gravity = 0.2;
+                this.lightOn = true;
+                this.maxJumpHeight = canvas.height / 3;
+                this.identical = false;
+                this.transformX = this.x + this.width;
+                this.transformY = this.y + this.height;
+
+                this.draw = function () {
+                    ctx.save();
+                    ctx.translate(this.transformX, this.transformY);
+                    ctx.rotate(this.rotation);
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(
+                        -this.width,
+                        -this.height,
+                        this.width,
+                        this.height
+                    );
+                    ctx.fillStyle = "#155";
+                    ctx.fillRect(
+                        -this.width + 10,
+                        -this.height + 7,
+                        this.width / 2,
+                        this.height / 2
+                    );
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+                    ctx.fillRect(
+                        -this.width - 5,
+                        -this.height - 5,
+                        this.width + 10,
+                        this.height + 10
+                    );
+                    ctx.fillStyle = "#eff";
+                    ctx.fillRect(-2.5, -this.height + 2.5, 5, 10);
+                    ctx.fillRect(-2.5, -this.height + 16, 5, 10);
+                    if (this.lightOn) {
+                        ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+                        ctx.beginPath();
+                        ctx.moveTo(-2.5, -this.height + 5);
+                        ctx.lineTo(60, -50);
+                        ctx.lineTo(60, 5);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.moveTo(-2.5, -this.height + 20);
+                        ctx.lineTo(60, -25);
+                        ctx.lineTo(60, 20);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                };
+
+                this.update = function () {
+                    this.draw();
+                    this.x += this.vx * Math.cos(this.rotation);
+                    this.y += this.vx * Math.sin(this.rotation);
+                    this.maxSpeed = 5;
+
+                    this.transformX = this.x + this.width;
+                    this.transformY = this.y + this.height;
+
+                    this.logic();
+                };
+
+                this.blinkLight = function () {
+                    if (inc % 20 > 10) this.lightOn = false;
+                    else this.lightOn = true;
+                };
+
+                this.logic = function () {
+                    if (this.x - (this.width * 2 + 10) > canvas.width)
+                        this.x = -this.width * 2 - 10;
+                    if (this.x + (this.width * 2 + 10) < 0)
+                        this.x = canvas.width + this.width + 10;
+                    if (this.y - (this.height * 2 + 10) > canvas.height)
+                        this.y = -this.height * 2 - 10;
+                    if (this.y + this.height * 2 + 10 < 0)
+                        this.y = canvas.height + this.height + 10;
+                };
+            };
+
+            function Square(_x, _y) {
+                this.x = _x;
+                this.y = _y;
+                this.width = 10;
+                this.height = 10;
+                this.color = "#199";
+                this.draw = function () {
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                };
+            }
+
+            function getRandomInt(_min, _max) {
+                return Math.floor(Math.random() * (_max - _min) + _min);
+            }
+
+            const ground = new Square(0, canvas.height / 2 - 100);
+
+            ground.height = 200;
+            ground.width = canvas.width;
+            ground.color = "#1aa";
+
+            generateCars();
+
+            function getRandom(_min, _max) {
+                return Math.random() * (_max - _min) + _min;
+            }
+
+            function generateCars(_) {
+                const car = new Rect(10, ground.y);
+                car.width = 50;
+                car.height = 30;
+                car.rotation = Math.PI;
+                car.vx = getRandomInt(1, 4);
+                cars.push(car);
+                const car2 = new Rect(
+                    10,
+                    ground.y + ground.height - ground.height / 4 - 15
+                );
+                car2.width = 50;
+                car2.vx = getRandomInt(1, 4);
+                car2.height = 30;
+                cars.push(car2);
+                const car3 = new Rect(
+                    200,
+                    ground.y + ground.height - ground.height / 4 - 15
+                );
+                car3.width = 50;
+                car3.vx = getRandomInt(1, 4);
+                car3.height = 30;
+                cars.push(car3);
+                const car4 = new Rect(200, ground.y);
+                car4.width = 50;
+                car4.height = 30;
+                car4.vx = getRandomInt(1, 4);
+                car4.rotation = Math.PI;
+                cars.push(car4);
+            }
+
+            let text = "AI: Hmm...",
+                inc = 0;
+
+            animate();
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                inc += 1;
+                // Text
+                ctx.fillStyle = "#144";
+                ctx.font = "20px Cursive";
+                ctx.fillText(text, 10, 24);
+                ground.draw();
+                for (let i = 0; i < ground.width / 50; i++) {
+                    ctx.fillStyle = "#177";
+                    ctx.fillRect(
+                        50 * i,
+                        ground.y + ground.height / 2 - 10,
+                        30,
+                        20
+                    );
+                }
+
+                cars.forEach(car => {
+                    car.update();
+                    cars.forEach(_car => {
+                        if (_car == car) return;
+                        if (getDistance(_car, car) < _car.width * 1.5) {
+                            if (Math.abs(_car.vx) < Math.abs(car.vx)) {
+                                if (car.x > car.x) car.rotation += 0.02;
+                                else car.rotation -= 0.04;
+                            }
+                            text = "AI: wtf";
+                            car.blinkLight();
+                        }
+                    });
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            function getDistance(_o1, _o2) {
+                return Math.sqrt(
+                    Math.pow(_o1.x - _o2.x, 2) + Math.pow(_o1.y - _o2.y, 2)
+                );
+            }
+        </script>
+    </body>
+</html>

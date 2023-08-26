@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rectangle (no frame reset)</title>
+        <style type="text/css">
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            html,
+            body {
+                overscroll-behavior: contain;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            canvas {
+                overflow: hidden;
+                background-color: #177;
+                margin-top: 10px;
+                border-radius: 5px;
+            }
+
+            p {
+                margin-top: 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <p>Draw smth... :/ <button id="reset">reset scene</button></p>
+        <canvas width="300" height="300" id="canvas">No Canvas Support</canvas>
+
+        <script type="text/javascript">
+            let canvas = document.getElementById("canvas"),
+                resetBtn = document.getElementById("reset"),
+                ctx = canvas.getContext("2d"),
+                mouse = {
+                    fx: undefined,
+                    fy: undefined,
+                    x: undefined,
+                    y: undefined,
+                    active: false,
+                    reset() {
+                        this.fx = undefined;
+                        this.y = undefined;
+                        this.x = undefined;
+                        this.fy = undefined;
+                    },
+                };
+
+            const Rect = function (_x = 10, _y = 10) {
+                this.x = _x;
+                this.y = _y;
+                this.width = 100;
+                this.height = 150;
+                this.color = "#155";
+
+                this.draw = function () {
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                };
+            };
+
+            canvas.onmousedown = function (_e) {
+                mouse.active = true;
+                mouse.x = _e.clientX - canvas.getBoundingClientRect().left;
+                mouse.y = _e.clientY - canvas.getBoundingClientRect().top;
+            };
+
+            canvas.ontouchstart = function (_e) {
+                mouse.active = true;
+                mouse.x =
+                    _e.touches[0].clientX - canvas.getBoundingClientRect().left;
+                mouse.y =
+                    _e.touches[0].clientY - canvas.getBoundingClientRect().top;
+            };
+
+            canvas.onmousemove = function (_e) {
+                mouse.x = _e.clientX - canvas.getBoundingClientRect().left;
+                mouse.y = _e.clientY - canvas.getBoundingClientRect().top;
+                if (mouse.active) addObj();
+            };
+
+            canvas.ontouchmove = function (_e) {
+                mouse.x =
+                    _e.touches[0].clientX - canvas.getBoundingClientRect().left;
+                mouse.y =
+                    _e.touches[0].clientY - canvas.getBoundingClientRect().top;
+                if (mouse.active) addObj();
+            };
+
+            canvas.ontouchend = function () {
+                mouse.active = false;
+                mouse.reset();
+            };
+
+            canvas.onmouseup = function () {
+                mouse.active = false;
+                mouse.reset();
+            };
+
+            canvas.oncontextmenu = function(_e) {
+                _e.preventDefault();
+            }
+
+            function getRandomColor() {
+                let colors = ["#133", "#144", "#155", "#166"];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            function addObj() {
+                const rect = new Rect(mouse.x - 15, mouse.y - 15);
+                rect.width = 30;
+                rect.height = 30;
+                rect.color = getRandomColor();
+
+                rect.draw();
+            }
+
+            resetBtn.onclick = function () {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            };
+        </script>
+    </body>
+</html>

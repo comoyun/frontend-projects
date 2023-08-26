@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMTH</title>
+    <style>
+        canvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #133;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="scene">nope</canvas>
+
+    <script type="text/javascript">
+        let canvas = document.getElementById("scene"),
+            ctx = canvas.getContext("2d"),
+            array = [];
+
+        let cx = (canvas.width = innerWidth) * 0.5,
+            cy = (canvas.height = innerHeight) * 0.5;
+
+        function Circle(_x, _y) {
+            this.x = _x,
+                this.y = _y;
+            this.r = 20;
+            this.draw = function () {
+                ctx.fillStyle = "#188";
+                ctx.strokeStyle = "#1aa";
+                ctx.lineWidth = 12;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.fill();
+            }
+
+            this.update = function () {
+                this.draw();
+                this.rotation += 0.005;
+                this.x = Math.cos(this.rotation) * 150 + cx;
+                this.y = Math.sin(this.rotation) * 150 + cy;
+            }
+        }
+
+        generate();
+        function generate() {
+            for (let i = 0; i < 6; i++) {
+                let cos = Math.cos(Math.PI * 2 / 6 * i);
+                let sin = Math.sin(Math.PI * 2 / 6 * i);
+
+                const circle = new Circle(cos * 150 + cx,
+                    (sin * 150 + cy));
+
+                circle.rotation = Math.PI * 2 / 6 * i;
+
+                array.push(circle);
+            }
+        }
+
+
+        animate();
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = "#155";
+            ctx.fillStyle = "#188";
+            ctx.shadowBlur = 0;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx, cy + 300);
+            ctx.closePath();
+            ctx.stroke();
+
+
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+            array.forEach(_ => {
+
+                ctx.strokeStyle = "#177";
+                ctx.lineWidth = 7;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(_.x, _.y);
+                ctx.closePath();
+                ctx.stroke();
+
+                _.update()
+            });
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, 20, 0, Math.PI * 2, false);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#177";
+            ctx.fillRect(cx - 50, cy + 300, 100, 100);
+
+            requestAnimationFrame(animate);
+        }
+    </script>
+</body>
+
+</html>
