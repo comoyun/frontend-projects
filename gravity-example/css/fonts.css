@@ -1,0 +1,12 @@
+@font-face {
+  font-family: header;
+  src: url("../res/fonts/header.ttf");
+}
+@font-face {
+  font-family: text;
+  src: url("../res/fonts/text.ttf");
+}
+@font-face {
+  font-family: footer;
+  src: url("../res/fonts/footer.ttf");
+}

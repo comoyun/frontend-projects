@@ -1,0 +1,42 @@
+@import "fonts.css";
+
+
+:root {
+  --background: #303465;
+  --color: #EEE;
+  --canvas_width: 100%;
+  --canvas_height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  margin: 0;
+  padding: 0;
+}
+
+
+
+body {
+  font-size: 15pt;
+  background: var(--background);
+  color: var(--color);
+  overflow: hidden;
+}
+
+canvas {
+  width: var(--canvas_width);
+  height: var(--canvas_height);
+  position: absolute;
+  left: 0;
+  top: 0;
+
+}
+
+.check {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+}

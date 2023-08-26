@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Fractions Calculator</title>
+        <style type="text/css">
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                width: 100%;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 15px;
+                background-color: #133;
+                color: white;
+                font-family: Verdana, Geneva, Tahoma, sans-serif;
+                font-size: 19px;
+            }
+
+            .container {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 7px;
+            }
+
+            .fraction {
+                display: flex;
+                flex-direction: column;
+                gap: 7px;
+                position: relative;
+            }
+
+            .fraction::before {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: 0;
+                width: 100%;
+                background-color: #eff;
+                height: 2px;
+            }
+
+            .fraction .numerator,
+            .fraction .denominator {
+                text-align: center;
+                cursor: pointer;
+            }
+
+            .fraction .numerator[contenteditable="true"],
+            .fraction .denominator[contenteditable="true"] {
+                cursor: text;
+            }
+
+            .operation {
+                width: 34px;
+                background: none;
+                border: none;
+                outline: none;
+                color: #199;
+                font-size: 18px;
+            }
+
+            .operation:hover,
+            .operation:focus,
+            .operation:active {
+                outline: none;
+            }
+
+            .add,
+            .equals {
+                background-color: #166;
+                color: white;
+                padding: 0.15em;
+                border-radius: 5px;
+                cursor: pointer;
+                user-select: none;
+            }
+
+            .controls {
+                display: flex;
+                gap: 6px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="controls">
+            <div class="add">+</div>
+            <div class="equals">=</div>
+        </div>
+        <div class="container">
+            <div class="fraction">
+                <div class="numerator">1</div>
+                <div class="denominator">1</div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            let addEl = document.querySelector(".add"),
+                calculateEl = document.querySelector(".equals"),
+                container = document.querySelector(".container"),
+                initialFraction = document.querySelector(".fraction"),
+                initialNumerator = initialFraction.querySelector(".numerator"),
+                initialDenominator =
+                    initialFraction.querySelector(".denominator");
+
+            const permittedKeys = [
+                    "arrowright",
+                    "arrowup",
+                    "arrowdown",
+                    "arrowleft",
+                    "backspace",
+                ],
+                fractions = [initialFraction];
+
+            const createFraction = (_numerator, _denominator) => {
+                const parent = document.createElement("div"),
+                    numerator = document.createElement("div"),
+                    denominator = document.createElement("div");
+
+                numerator.textContent = _numerator;
+                denominator.textContent = _denominator;
+
+                numerator.classList.add("numerator");
+                denominator.classList.add("denominator");
+                parent.classList.add("fraction");
+
+                parent.appendChild(numerator);
+                parent.appendChild(denominator);
+
+                enableEditing(numerator);
+                enableEditing(denominator);
+
+                return parent;
+            };
+
+            const createOperation = () => {
+                const selectEl = document.createElement("select"),
+                    additionOpt = document.createElement("option"),
+                    subtractionOpt = document.createElement("option"),
+                    multiplicationOpt = document.createElement("option"),
+                    divisionOpt = document.createElement("option");
+
+                selectEl.classList.add("operation");
+
+                additionOpt.setAttribute("value", "+");
+                subtractionOpt.setAttribute("value", "-");
+                multiplicationOpt.setAttribute("value", "*");
+                divisionOpt.setAttribute("value", "/");
+
+                additionOpt.textContent = "+";
+                subtractionOpt.textContent = "-";
+                multiplicationOpt.textContent = "*";
+                divisionOpt.textContent = "/";
+
+                selectEl.appendChild(additionOpt);
+                selectEl.appendChild(subtractionOpt);
+                selectEl.appendChild(multiplicationOpt);
+                selectEl.appendChild(divisionOpt);
+
+                return selectEl;
+            };
+
+            const calculate = () => {
+                fractions.forEach((_fraction, _index) => {
+                    if ((_index + 1) % 3 === 0) {
+                        const firstFraction = fractions[_index - 2];
+                        const operation = fractions[_index - 1];
+                        const secondFraction = fractions[_index];
+                        const firstNumerator =
+                            +firstFraction.querySelector(".numerator")
+                                .textContent;
+                        const firstDenominator =
+                            +firstFraction.querySelector(".denominator")
+                                .textContent;
+                        const secondNumerator =
+                            +secondFraction.querySelector(".numerator")
+                                .textContent;
+                        const secondDenominator =
+                            +secondFraction.querySelector(".denominator")
+                                .textContent;
+
+                        let commonDenominator, calculatedNumerators, opr;
+
+                        if (operation.value == "+") opr = "+";
+                        if (operation.value == "-") opr = "-";
+                        if (operation.value == "/") opr = "/";
+                        if (operation.value == "*") opr = "*";
+
+                        if (opr == "+" || opr == "-") {
+                            if (opr == "+") {
+                                if (firstDenominator == secondDenominator) {
+                                    commonDenominator = firstDenominator;
+                                    calculatedNumerators =
+                                        firstNumerator + secondNumerator;
+                                } else {
+                                    commonDenominator =
+                                        firstDenominator * secondDenominator;
+                                    calculatedNumerators =
+                                        firstNumerator * secondDenominator +
+                                        secondNumerator * firstDenominator;
+                                }
+                            } else {
+                                if (firstDenominator == secondDenominator) {
+                                    commonDenominator = firstDenominator;
+                                    calculatedNumerators =
+                                        firstNumerator - secondNumerator;
+                                } else {
+                                    commonDenominator =
+                                        firstDenominator * secondDenominator;
+                                    calculatedNumerators =
+                                        firstNumerator * secondDenominator -
+                                        secondNumerator * firstDenominator;
+                                }
+                            }
+                        } else {
+                            if (opr == "*") {
+                                commonDenominator =
+                                    firstDenominator * secondDenominator;
+                                calculatedNumerators =
+                                    firstNumerator * secondNumerator;
+                            } else {
+                                commonDenominator =
+                                    firstDenominator * secondNumerator;
+                                calculatedNumerators =
+                                    firstNumerator * secondDenominator;
+                            }
+                        }
+
+                        fractions.shift();
+                        fractions.shift();
+                        fractions.shift();
+
+                        fractions.unshift(
+                            createFraction(
+                                calculatedNumerators,
+                                commonDenominator
+                            )
+                        );
+
+                        if (fractions.length > 2) calculate();
+                        else {
+                            container.innerHTML = "";
+                            container.appendChild(fractions[0]);
+                        }
+                    }
+                });
+            };
+
+            const addFraction = () => {
+                const fraction = createFraction(1, 1);
+                const operation = createOperation();
+
+                fractions.push(operation);
+                fractions.push(fraction);
+
+                container.appendChild(operation);
+                container.appendChild(fraction);
+            };
+
+            const isValid = (_number) => {
+                const converted = _number + "";
+                return converted.search(/\D/g) == -1 && converted.length < 5;
+            };
+
+            const enableEditing = (_element) => {
+                _element.addEventListener("click", () => {
+                    _element.setAttribute("contenteditable", true);
+                });
+                _element.addEventListener("keydown", (_event) => {
+                    const key = _event.key.toLowerCase();
+
+                    if (permittedKeys.includes(key)) return;
+                    if (key === "enter")
+                        _element.setAttribute("contenteditable", false);
+
+                    if (!isValid(key) || _element.textContent.length > 5)
+                        _event.preventDefault();
+                });
+            };
+
+            enableEditing(initialNumerator);
+            enableEditing(initialDenominator);
+
+            addEl.addEventListener("click", addFraction);
+            calculateEl.addEventListener("click", calculate);
+        </script>
+    </body>
+</html>

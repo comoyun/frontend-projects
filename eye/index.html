@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EYE</title>
+    <style>
+        *,
+        *::after,
+        *::before {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            background-color: #133;
+            color: #eff;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: end;
+            align-items: flex-start;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 1em;
+        }
+
+        canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #whoop {
+            position: absolute;
+            left: 10%;
+            top: 10%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas></canvas>
+
+    <div id="whoop">
+        <span style="color: #155;">-</span>
+        <span style="color: #166;">-</span>
+        <span style="color: #177;">-</span>
+        <span style="color: #188;">-</span>
+    </div>
+
+    <script>
+        let canvas = document.querySelector("canvas"),
+            ctx = canvas.getContext("2d"),
+            degree = 0,
+            mouse = { x: 0, y: 0 },
+            x = 0, y = 0, w = 0, h = 0,
+            w2 = 0, h2 = 0, x2 = 0, y2 = 0;
+
+        w2 = (w = canvas.width = innerWidth) * 0.5;
+        h2 = (h = canvas.height = innerHeight) * 0.5;
+
+        const format = _ => {
+            return _ <= 99 ? _ <= 9 ? "00" + _ : "0" + _ : _;
+        };
+
+        const convertToDegrees = (_x, _y) => {
+            return Math.atan2(_x, _y) * 180 / Math.PI;
+        };
+
+        const getDistance = (_1, _2) => {
+            return Math.sqrt((_1.x - _2.x) ** 2 + (_1.y - _2.y) ** 2);
+        }
+
+        const drawEye = () => {
+            ctx.clearRect(0, 0, w, h);
+
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.moveTo(w * 0.5 - 150, h * 0.5);
+            ctx.bezierCurveTo(w * 0.5, h * 0.5 - 60, w * 0.5, h * 0.5 - 60, w * 0.5 + 150, h * 0.5);
+            ctx.bezierCurveTo(w * 0.5, h * 0.5 + 60, w * 0.5, h * 0.5 + 60, w * 0.5 - 150, h * 0.5);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.globalCompositeOperation = "destination-out";
+            ctx.fillStyle = "#177";
+            ctx.beginPath();
+            ctx.arc(w2, h2, 40, 0, Math.PI * 2, false);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.globalCompositeOperation = "source-over";
+            ctx.fillStyle = "#122";
+            ctx.beginPath();
+            ctx.arc(w2, h2, 15, 0, Math.PI * 2, false);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.globalCompositeOperation ="overlay";
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.strokeStyle = "#133";
+            for (let i = 0; i < Math.PI * 2; i += 0.1) {
+                ctx.beginPath();
+                x = (w2 - 15) + 15 + Math.cos(i) * 10;
+                y = (h2 - 15) + 15 + Math.sin(i) * 10;
+                x2 = (w2 - 15) + 15 + Math.cos(i) * 40;
+                y2 = (h2 - 15) + 15 + Math.sin(i) * 40;
+                ctx.moveTo(x, y);
+                ctx.lineTo(x2, y2);
+                ctx.closePath();
+                ctx.stroke();
+            }
+        };
+
+        const event = _e => {
+            if (_e.type === "touchmove") {
+                mouse.x = _e.touches[0].clientX;
+                mouse.y = _e.touches[0].clientY;
+            } else {
+                mouse.x = _e.clientX;
+                mouse.y = _e.clientY;
+            }
+
+            let cx = Math.atan2(mouse.y - h2, mouse.x - w2);
+
+            if (getDistance(mouse, { x: w * 0.5, y: h * 0.5 }) > 40) {
+                w2 = w * 0.5 + Math.cos(cx) * 20;
+                h2 = h * 0.5 + Math.sin(cx) * 20;
+            }
+
+            drawEye();
+        };
+
+        window.addEventListener("mousemove", event);
+        window.addEventListener("touchmove", event);
+        window.addEventListener("resize", () => {
+            w2 = (w = canvas.width = innerWidth) * 0.5;
+            h2 = (h = canvas.height = innerHeight) * 0.5;
+            drawEye();
+        });
+        document.addEventListener("DOMContentLoaded", drawEye);
+    </script>
+</body>
+
+</html>

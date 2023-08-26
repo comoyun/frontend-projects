@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+
+    <link rel="stylesheet" href="./style.css">
+
+</head>
+
+<body>
+
+    <script src="./Canvas2D.js" type="text/javascript"></script>
+    <script type="text/javascript">
+
+        const c = new Canvas2D({ resetFrame: true });
+
+        // full width & full height
+        c.setSize(true);
+
+        const letter = function (_text, _x, _y) {
+            this.width = 22;
+            this.text = _text;
+            this.height = 30;
+            this.x = _x;
+            this.fontSize = 28;
+            this.measureText = {};
+            this.y = _y;
+            this.base = _text;
+            this.fill = "#199";
+            this.place = function () {
+                c.ctx.fillStyle = this.fill;
+                c.ctx.font = this.fontSize + "px normal monospace";
+                // c.ctx.fillRect(this.x, this.y, this.width, this.height);
+                this.measureText = c.ctx.measureText(this.text);
+                c.ctx.fillText(this.text, this.x + this.width * 0.5 - this.measureText.width * 0.5, this.y + this.height * 0.5 + this.fontSize * 0.25);
+            }
+        }
+
+        const fillText = function (_text) {
+            this.text = _text;
+            this.letters = [];
+            this.generate = function () {
+                this.letters = [];
+                for (let i = 0; i < this.text.length; i++) {
+                    const lett = new letter(this.text[i],
+                        c.centerX, c.centerY);
+
+                    lett.x += i * lett.width - (this.text.length * lett.width) * 0.5;
+
+                    this.letters.push(
+                        lett
+                    );
+                }
+            };
+            this.generate();
+            this.place = function () {
+                this.letters.forEach(_ => {
+                    _.place();
+                });
+            }
+        };
+
+        const rect = function (_x, _y) {
+            this.x = _x;
+            this.y = _y;
+            this.width = 100;
+            this.height = 150;
+            this.place = function () {
+                c.ctx.fillStyle = "#133";
+                c.ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
+        const arc = function () {
+            this.radius = 8;
+            this.x = 20;
+            this.y = 20;
+            this.vy = 5;
+            this.restrict = 20;
+            this.gravity = 0.2;
+            this.fillColor = "white";
+
+            this.place = function () {
+                c.ctx.fillStyle = this.fillColor;
+                c.ctx.beginPath();
+                c.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                c.ctx.closePath();
+                c.ctx.fill();
+            };
+
+            this.update = function () {
+                this.place();
+                this.y += this.vy;
+                this.vy += this.gravity;
+                this.x += 1;
+
+                if (this.vy >= 5) this.vy = 5;
+                if (this.y - this.radius >= this.restrict) this.vy *= -1;
+                if (this.y - this.radius >= this.restrict) this.y = this.restrict - this.radius;
+            }
+        }
+
+        // Collision detector
+        function collide(_o1, _o2) {
+            if (
+                !(
+                    _o1.x <= _o2.x ||
+                    _o1.x >= _o2.x + _o2.width ||
+                    _o1.y <= _o2.y ||
+                    _o1.y >= _o2.y + _o2.height
+                )
+            ) {
+                return true;
+            }
+            return false;
+        }
+
+        const text = new fillText("LOADING"),
+            ball = new arc();
+
+        ball.restrict = text.letters[0].y - text.letters[0].height + 25;
+
+        ball.y = ball.restrict - ball.radius;
+
+        // invisible sides
+        const right = new rect(text.letters[text.letters.length - 1].x + text.letters[text.letters.length - 1].width, ball.y - 90),
+            left = new rect(text.letters[0].x - 100, ball.y - 90);
+
+        ball.x = left.x + left.width * 0.5 + ball.radius;
+
+        c.animate(() => {
+
+            // update & draw the objects
+            text.place();
+            ball.update();
+            right.place();
+            left.place();
+
+            if (ball.x - ball.radius >= right.x) ball.x = left.x + left.width * 0.5 + ball.radius;
+
+            // check if there is collision between the letters
+            text.letters.forEach(_letter => {
+                if (collide(ball, _letter)) {
+                    _letter.text = _letter.text === "O" ? _letter.base : "O";
+                    _letter.fill = _letter.text === "O" ? "white" : "#199";
+                }
+            });
+        });
+
+    </script>
+</body>
+
+</html>

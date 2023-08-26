@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Image Processing</title>
+        <style type="text/css">
+            html,
+            body {
+                width: 100%;
+                height: 100vh;
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+                background-color: #133;
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="scene"></canvas>
+
+        <script type="text/javascript">
+            let images = ["./brick.png", "./door.png", "./tree.png"],
+                radians = 0;
+
+            const canvas = document.querySelector("#scene");
+
+            canvas.width = 400;
+            canvas.height = 400;
+            canvas.style.border = "2px solid white";
+
+            const ctx = canvas.getContext("2d");
+
+            images = images.map((_imageURL) => {
+                let imgEl = new Image();
+                imgEl.src = _imageURL;
+                imgEl.dataset.loaded = false;
+                imgEl.onload = () => (imgEl.dataset.loaded = true);
+                return imgEl;
+            });
+
+            const getRandomArrayItem = (_array) => {
+                return _array[Math.floor(Math.random() * _array.length)];
+            };
+
+            const randomPic = getRandomArrayItem(images);
+
+            const drawStretchedImage = () => {
+                ctx.drawImage(randomPic, 0, 0, randomPic.naturalWidth * 4, 100);
+            };
+
+            const pattern = ctx.createPattern(images[2], "repeat");
+
+            const drawAnimatedImage = () => {
+                radians += 0.01;
+                ctx.save();
+                ctx.translate(canvas.width * 0.5, 150);
+                ctx.rotate(radians);
+                ctx.drawImage(
+                    images[0],
+                    -images[0].naturalWidth * 0.5,
+                    -100,
+                    images[0].naturalWidth,
+                    200
+                );
+                ctx.restore();
+            };
+
+            const drawRepeatedImage = () => {
+                ctx.fillStyle = ctx.createPattern(images[2], "repeat");;
+                ctx.fillRect(
+                    0,
+                    canvas.height * 0.75,
+                    canvas.width,
+                    images[2].naturalHeight,
+                );
+            };
+
+            const clear = () =>
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const loop = () => {
+                clear();
+                drawStretchedImage();
+                drawAnimatedImage();
+                drawRepeatedImage();
+                requestAnimationFrame(loop)
+            };
+
+            loop();
+        </script>
+    </body>
+</html>
